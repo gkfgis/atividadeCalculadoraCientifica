@@ -15,11 +15,173 @@ windowY = 310
 ciencia = False
 shift = False
 alpha = False
-variaveis = {'A': 0, 'B': 0, 'C': 0, 'D': 0, 'E': 0, 'F': 0} 
 menu_s_sum_ativo = False
 menu_s_var_ativo = False
-mplus = [2, 4, 6, 8]  # Lista de valores para testes
+values = ["#"]          # Lista de dígitos digitados
+operation = [0, "#", 0] # [valor1, operador, valor2]
+aIndex = 0              # Índice para operação
+memory_slots = {
+  "A": "4",
+  "B": "5",
+  "C": "0",
+  "D": "0",
+  "E": "8",
+  "F": "0",
+  "G": "0",
+  "X": "0",
+  "Y": "0",
+  "M": "0"
+}
 
+def vld_slots():
+    """Return list of valid slot keys."""
+    return list(memory_slots.keys())
+
+def is_valid_slot(slot: str) -> bool:
+    if not slot or not isinstance(slot, str):
+        return False
+    return slot.strip().upper() in memory_slots
+
+def set_memory(slot: str, value: str) -> bool:
+    if not isinstance(slot, str):
+        return False
+    s = slot.strip().upper()
+    if s in memory_slots:
+        memory_slots[s] = value
+        return True
+    return False
+
+def get_memory(slot: str):
+    if not isinstance(slot, str):
+        return None
+    return memory_slots.get(slot.strip().upper(), None)
+################# CODIGO ADICIONADO GRUPO CAIKE ####################
+def res():
+    try:
+        a = operation[0]
+        b = operation[2]
+        op = operation[1]
+
+        if op == "+":
+            return a + b
+        elif op == "-":
+            return a - b
+        elif op == "*":
+            return a * b
+        elif op == "/":
+            return "Erro" if b == 0 else a / b
+        else:
+            return b
+    except:
+        return "Erro"
+
+def reset_values(result):
+    global values, operation, aIndex, Number1
+    values = ["#"]
+    operation = [result, "#", 0]
+    aIndex = 0
+    Number1 = str(result)
+    Display.set(Number1)
+
+def calc_raiz():
+    global Number1, values
+    try:
+        n = float(Number1.replace(",", "."))
+        res = math.sqrt(n)
+        reset_values(res)
+    except:
+        Display.set("Erro")
+
+def calc_raiz_cubica():
+    global Number1, values
+    try:
+        n = float(Number1.replace(",", "."))
+        res = n ** (1/3)
+        reset_values(res)
+    except:
+        Display.set("Erro")
+
+def calc_radiciacao():
+    global values, operation, aIndex, Number1
+    try:
+        if operation[1] == "rad":
+            radicando = float(Number1.replace(",", "."))
+            indice = operation[0]
+            if indice == 0:
+                Display.set("Erro")
+            else:
+                res = radicando ** (1/indice)
+                reset_values(res)
+        else:
+            indice = float(Number1.replace(",", "."))
+            operation[0] = indice
+            operation[1] = "rad"
+            values = ["#"]
+            Number1 = str(indice) + "√"
+            Display.set(Number1)
+    except:
+        Display.set("Erro")
+
+def calc_inverso():
+    global Number1
+    try:
+        n = float(Number1.replace(",", "."))
+        if n == 0:
+            Display.set("Erro")
+        else:
+            res = 1 / n
+            reset_values(res)
+    except:
+        Display.set("Erro")
+        
+def calc_fatorial():
+    global Number1
+    try:
+        n = int(float(Number1.replace(",", ".")))
+        if n < 0:
+            Display.set("Erro")
+        else:
+            res = math.factorial(n)
+            reset_values(res)
+    except:
+        Display.set("Erro")
+
+def calc_quadrado():
+    global Number1
+    try:
+        n = float(Number1.replace(",", "."))
+        res = n**2
+        reset_values(res)
+    except:
+        Display.set("Erro")
+
+def calc_cubo():
+    global Number1
+    try:
+        n = float(Number1.replace(",", "."))
+        res = n**3
+        reset_values(res)
+    except:
+        Display.set("Erro")
+
+def calc_exponenciacao():
+    global values, operation, aIndex, Number1
+    try:
+        if operation[1] == "^":
+            expoente = float(Number1.replace(",", "."))
+            base = operation[0]
+            res = base ** expoente
+            reset_values(res)
+        else:
+            base = float(Number1.replace(",", "."))
+            operation[0] = base
+            operation[1] = "^"
+            values = ["#"]
+            Number1 = str(base) + "^"
+            Display.set(Number1)
+    except:
+        Display.set("Erro")
+################# FIM DO CODIGO ADICIONADO GRUPO CAIKE ####################
 def  fnPi():
     pi = math.pi
 menu_drg_ativo = False
@@ -65,31 +227,38 @@ def fnExp(valor):
         return (resultado)
     except:
         return "Erro"
+def get_slotValues():
+    return [float(v) for v in memory_slots.values()]
+
 def media_x():
-    return sum(mplus)/len(mplus) if mplus else 0
+    valores = get_slotValues()
+    return sum(valores) / len(valores) if valores else 0
 
 def desvio_populacional():
-    n = len(mplus)
+    valores = get_slotValues()
+    n = len(valores)
     if n == 0:
         return 0
     mean = media_x()
-    return (sum((x - mean)**2 for x in mplus)/n)**0.5
+    return (sum((x - mean) ** 2 for x in valores) / n) ** 0.5
 
 def desvio_amostral():
-    n = len(mplus)
+    valores = get_slotValues()
+    n = len(valores)
     if n <= 1:
         return 0
     mean = media_x()
-    return (sum((x - mean)**2 for x in mplus)/(n-1))**0.5
+    return (sum((x - mean) ** 2 for x in valores) / (n - 1)) ** 0.5
 
 def fnSoma_x():
-    return sum(mplus)
+    return sum(get_slotValues())
 
 def fnSoma_x2():
-    return sum(x**2 for x in mplus)
+    return sum(x ** 2 for x in get_slotValues())
 
 def fnQuantidade_n():
-    return len(mplus)
+    valores = get_slotValues()
+    return sum(1 for v in valores if v != 0)
 def fnHSIN(valor):
     """Seno hiperbólico"""
     try:
@@ -261,6 +430,14 @@ FUNCOES = {
     'hasin': fnHSIN_INV, 
     'hacos': fnHCOS_INV,  
     'hatan': fnHTAN_INV,
+    
+    # ADICIONE ESTAS NOVAS FUNÇÕES:
+    'raiz': math.sqrt,           # raiz(x) - raiz quadrada
+    'cbrt': lambda x: x ** (1/3), # cbrt(x) - raiz cúbica
+    'quad': lambda x: x ** 2,     # quad(x) - quadrado
+    'cubo': lambda x: x ** 3,     # cubo(x) - cubo
+    'inv': lambda x: 1/x,         # inv(x) - inverso
+    'fat': math.factorial,        # fat(x) - fatorial
 }
 virgulas = True  
 operadores = [" + ", " - ", " X ", " ÷ ","sin("]
