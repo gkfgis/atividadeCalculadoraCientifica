@@ -32,7 +32,7 @@ memory_slots = {
   "Y": "0",
   "M": "0"
 }
-
+########################################### GRUPO LEANDRO ####################################
 def vld_slots():
     """Return list of valid slot keys."""
     return list(memory_slots.keys())
@@ -55,7 +55,27 @@ def get_memory(slot: str):
     if not isinstance(slot, str):
         return None
     return memory_slots.get(slot.strip().upper(), None)
+################################### FIM GRUPO LEANDRO ########################
 ################# CODIGO ADICIONADO GRUPO CAIKE ####################
+def processar_operador_basico(operador):
+    global operation, Number1
+    
+    operador_simples = operador.strip().replace("X", "*").replace("÷", "/")
+    
+    if operation[1] == "#":  
+        operation[0] = float(Number1.replace(",", "."))
+        operation[1] = operador_simples
+        Number1 = "0"
+        Display.set(Number1)
+    else:  
+        operation[2] = float(Number1.replace(",", "."))
+        resultado = res()
+        operation[0] = resultado
+        operation[1] = operador_simples
+        operation[2] = 0
+        Number1 = str(resultado)
+        Display.set(Number1)
+
 def res():
     try:
         a = operation[0]
@@ -121,9 +141,14 @@ def calc_radiciacao():
             Display.set(Number1)
     except:
         Display.set("Erro")
-
+        
 def calc_inverso():
-    global Number1
+    global Number1, shift
+    
+    if shift:
+        calc_fatorial()
+        shift = False  
+        return
     try:
         n = float(Number1.replace(",", "."))
         if n == 0:
@@ -133,7 +158,6 @@ def calc_inverso():
             reset_values(res)
     except:
         Display.set("Erro")
-        
 def calc_fatorial():
     global Number1
     try:
@@ -156,22 +180,35 @@ def calc_quadrado():
         Display.set("Erro")
 
 def calc_cubo():
-    global Number1
-    try:
-        n = float(Number1.replace(",", "."))
-        res = n**3
-        reset_values(res)
-    except:
-        Display.set("Erro")
+    global Number1,shift
+    if (shift):
+            res = calc_raiz_cubica()
+            shift = not shift
+    else:
+        try:
+           n = float(Number1.replace(",", "."))
+           res = n**3
+           reset_values(res)
+        
+        except:
+            Display.set("Erro")
 
 def calc_exponenciacao():
-    global values, operation, aIndex, Number1
+    global values, operation, aIndex, Number1, shift
+    
+  
+    if shift:
+        calc_raiz_cubica()
+        shift = False 
+        return
+    
     try:
         if operation[1] == "^":
             expoente = float(Number1.replace(",", "."))
             base = operation[0]
             res = base ** expoente
             reset_values(res)
+            
         else:
             base = float(Number1.replace(",", "."))
             operation[0] = base
@@ -709,7 +746,7 @@ def socorro_me_ajuda(oi):
         but21.config(height=1, width=3, text="", command=lambda:mudarShift())
         but21.place(x=(xaux) - xauxoffset, y=yaux * (0.85) - yauxoffset + 25)
         text6.place(x=(xaux) - xauxoffset + 10, y=yaux * (1.5) - yauxoffset + 12)
-        but11.config(height=1, width=3, text="X", command= "")
+        but11.config(height=1, width=3, text="X⁻¹", command=calc_inverso)
         but11.place(x=(xaux) - xauxoffset, y=yaux * (1.5) - yauxoffset + 25)
         text7.place(x=(xaux) - xauxoffset + 10, y=yaux * (2.175) - yauxoffset + 11)
         but22.config(height=1, width=3, text="ab/c", command= "")
@@ -730,7 +767,7 @@ def socorro_me_ajuda(oi):
         butC22.place(x=(xaux * 3.5) - xauxoffset, y=yaux * (1.5) - yauxoffset + 25)
         butC22.config(height=1, width=3)
         butC23.place(x=(xaux * 3.5) - xauxoffset, y=yaux * (2.175) - yauxoffset + 25)
-        butC23.config(height=1, width=3)
+        butC23.config(height=1, width=3,command=calc_raiz)
         text11.place(x=(xaux * 3.5) - xauxoffset, y=yaux * (2.85) - yauxoffset + 12)
         text12.place(x=(xaux * 3.5) - xauxoffset + 20, y=yaux * (2.85) - yauxoffset + 12)
         butC24.place(x=(xaux * 3.5) - xauxoffset, y=yaux * (2.85) - yauxoffset + 25)
@@ -746,7 +783,7 @@ def socorro_me_ajuda(oi):
         butCrep3.place(x=(xaux * 7.2) - xauxoffset, y=yaux * (1.5) - yauxoffset + 25)
         butCrep2.place(x=(xaux * 8.5) - xauxoffset, y=yaux * (1.175) - yauxoffset + 25)
         butC33.place(x=(xaux * 5.9) - xauxoffset, y=yaux * (2.175) - yauxoffset + 25)
-        butC33.config(height=1, width=3)
+        butC33.config(height=1, width=3,command=calc_quadrado)
         text14.place(x=(xaux * 5.9) - xauxoffset + 20, y=yaux * (2.85) - yauxoffset + 12)
         butC34.place(x=(xaux * 5.9) - xauxoffset, y=yaux * (2.85) - yauxoffset + 25)
         butC34.config(height=1, width=3, command=lambda:inserir_H())
@@ -757,7 +794,7 @@ def socorro_me_ajuda(oi):
         
         text15.place(x=(xaux * 8.5) - xauxoffset + 10, y=yaux * (2.175) - yauxoffset + 12)
         butC43.place(x=(xaux * 8.5) - xauxoffset, y=yaux * (2.175) - yauxoffset + 25)
-        butC43.config(height=1, width=3)
+        butC43.config(height=1, width=3,command=calc_exponenciacao)
         text16.place(x=(xaux * 8.5) - xauxoffset, y=yaux * (2.85) - yauxoffset + 12)
         text17.place(x=(xaux * 8.5) - xauxoffset + 20, y=yaux * (2.85) - yauxoffset + 12)
         butC44.place(x=(xaux * 8.5) - xauxoffset, y=yaux * (2.85) - yauxoffset + 25)
@@ -795,7 +832,7 @@ def socorro_me_ajuda(oi):
         butC61.config(height=1, width=3)
         text26.place(x=(xaux * 13.5) - xauxoffset + 5, y=yaux * (1.5) - yauxoffset + 12)
         butC62.place(x=(xaux * 13.5) - xauxoffset, y=yaux * (1.5) - yauxoffset + 25)
-        butC62.config(height=1, width=3)
+        butC62.config(height=1, width=3,command=calc_cubo)
         text27.place(x=(xaux * 13.5) - xauxoffset, y=yaux * (2.175) - yauxoffset + 12)
         text28.place(x=(xaux * 13.5) - xauxoffset + 20, y=yaux * (2.175) - yauxoffset + 12)
         butC63.place(x=(xaux * 13.5) - xauxoffset, y=yaux * (2.175) - yauxoffset + 25)
@@ -821,13 +858,13 @@ def inserir_ans():
         Number1 += "Ans"
         Display.set(formatarcontaessao(Number1))
 def armazenar_em_variavel(variavel, valor=None):
-    global ans, variaveis
+    global ans, memory_slots
     
     if valor is None:
         valor = ans
     
-    if variavel.upper() in variaveis:
-        variaveis[variavel.upper()] = valor
+    if variavel.upper() in memory_slots:
+        memory_slots[variavel.upper()] = valor
         return True
     else:
         return False
@@ -1182,22 +1219,21 @@ def inserir_operador(value):
         virgulas = True
 
     Display.set(formatarcontaessao(Number1))
-
 def resultado():
     global Number1, virgulas, ciencia
+    
     if ciencia:
         resultado = calcular_cientifica(Number1)
     else:
         resultado = calcular(Number1)
     
-    if resultado == "Não é possível dividir por zero":
+    if resultado == "Não é possível dividir por zero" or resultado == "Erro":
         limpar()
-        Display.set("Não é possível dividir por zero")
+        Display.set("Erro")
     else:
-        Number1 = resultado
+        Number1 = str(resultado)
         Display.set(formatarcontaessao(Number1))
         virgulas = True
-
 def formatarcontaessao(conta):
     global ciencia
     if ciencia:
@@ -1299,7 +1335,7 @@ def processar_funcoes_inversas(conta):
     
     return conta
 def calcular_cientifica(conta):
-    global ans, variaveis
+    global ans, memory_slots
     
     try:
         conta = converter_notacao_inversa(conta)
@@ -1311,9 +1347,10 @@ def calcular_cientifica(conta):
         
         # Resto do processamento normal...
         conta = conta.replace("Ans", str(ans))
-        for var, valor in variaveis.items():
+        for var, valor in memory_slots.items():
             conta = conta.replace(var, str(valor))
-        
+        conta = conta.replace("^", "**")
+
         conta = conta.replace("π", str(math.pi))
         conta = conta.replace("X", "*").replace("÷", "/").replace(",", ".")
         conta = remover_zeros_esquerda(conta)

@@ -351,7 +351,7 @@ def processar_completo(conta):
     
     # Substitui Ans e variáveis
     conta = conta.replace("Ans", str(ans))
-    for var, valor in variaveis.items():
+    for var, valor in memory_slots.items():
         conta = conta.replace(var, str(valor))
     
     # Símbolos matemáticos
@@ -417,7 +417,7 @@ def inserir_numero(value):
             menu_drg_ativo = False
 #O TRECHO A SEGUIR SERVE APENAS PARA ILUSTRAR ONDE O PROCESSAR_COMPLETO DEVE SER CHAMADO E QUANDO O VALOR DA VARIAVEL ans DEVE SER ALTERADO
 def calcular_cientifica(conta):
-    global ans, variaveis
+    global ans, memory_slots
     try:
         conta = processar_completo(conta)
         # Corrige parênteses
