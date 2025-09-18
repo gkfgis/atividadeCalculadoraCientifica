@@ -32,30 +32,14 @@ memory_slots = {
   "Y": "0",
   "M": "0"
 }
-########################################### GRUPO LEANDRO ####################################
-def vld_slots():
-    """Return list of valid slot keys."""
-    return list(memory_slots.keys())
 
-def is_valid_slot(slot: str) -> bool:
-    if not slot or not isinstance(slot, str):
-        return False
-    return slot.strip().upper() in memory_slots
 
-def set_memory(slot: str, value: str) -> bool:
-    if not isinstance(slot, str):
-        return False
-    s = slot.strip().upper()
-    if s in memory_slots:
-        memory_slots[s] = value
-        return True
-    return False
 
-def get_memory(slot: str):
-    if not isinstance(slot, str):
-        return None
-    return memory_slots.get(slot.strip().upper(), None)
-################################### FIM GRUPO LEANDRO ########################
+
+
+
+
+
 ################# CODIGO ADICIONADO GRUPO CAIKE ####################
 def processar_operador_basico(operador):
     global operation, Number1
@@ -1125,7 +1109,7 @@ def backspace():
             ultimo = ultimo[:-1]
             if ultimo == "":
                 partes = partes[:-1]
-                if len(partes) == 0:
+                if (len(partes) == 0):
                     Number1 = "0"
                     virgulas = True
                     Display.set(Number1)
@@ -1342,27 +1326,23 @@ def calcular_cientifica(conta):
         conta = converter_notacao_hiperbolica_inversa(conta)
         conta = processar_funcoes_inversas(conta)
         conta = processar_funcoes_hiperbolicas(conta)
-       
         conta = processar_expressao_com_unidades(conta)
         
         # Resto do processamento normal...
         conta = conta.replace("Ans", str(ans))
-        for var, valor in memory_slots.items():
-            conta = conta.replace(var, str(valor))
-        conta = conta.replace("^", "**")
 
+        conta = conta.replace("^", "**")
         conta = conta.replace("π", str(math.pi))
         conta = conta.replace("X", "*").replace("÷", "/").replace(",", ".")
         conta = remover_zeros_esquerda(conta)
-        
         conta = processar_simbolos_angulares(conta)
-        
-        # Conta parênteses
+        for var, valor in memory_slots.items():
+            conta = conta.replace(var, str(valor))
+
         abertos = conta.count('(')
         fechados = conta.count(')')
         conta += ')' * (abertos - fechados)
         
-        # Parsing da expressão
         tree = ast.parse(conta, mode='eval')
 
         def _eval(node):
