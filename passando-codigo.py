@@ -30,10 +30,13 @@ def ativar_menu_drg():
     Display.set("D-1 R-2 G-3")  # Mostra as opções de ângulos: Degree, Radian, Gradian
     
 def converter_para_graus(valor_str):
-  
     try:
-        
+        if isinstance(valor_str, (int, float)):
+            return float(valor_str)
+            
         valor_str = str(valor_str).strip().lower()
+        
+        valor_str = valor_str.replace('(', '').replace(')', '')
         
         if '°' in valor_str:
             numero = valor_str.replace('°', '')
@@ -63,7 +66,7 @@ def converter_para_graus(valor_str):
             
     except ValueError as e:
         print(f"Erro ao converter {valor_str}: {e}")
-        return float(valor_str)  
+        return 0.0
     except Exception as e:
         print(f"Erro inesperado com {valor_str}: {e}")
         return 0.0
@@ -94,42 +97,109 @@ def fnSoma_x2():
 def fnQuantidade_n():
     return len(mplus)
 
+def fnHSIN(valor):
+    """Seno hiperbólico"""
+    try:
+        return math.sinh(float(valor))
+    except:
+        return "Erro"
+
+def fnHCOS(valor):
+    """Cosseno hiperbólico"""
+    try:
+        return math.cosh(float(valor))
+    except:
+        return "Erro"
+
+def fnHTAN(valor):
+    """Tangente hiperbólica"""
+    try:
+        return math.tanh(float(valor))
+    except:
+        return "Erro"
+
+def fnHSIN_INV(valor):
+    """Arco seno hiperbólico (hsin⁻¹)"""
+    try:
+        valor_num = float(valor)
+        # Aceita qualquer número real
+        return math.asinh(valor_num)
+    except:
+        return "Erro"
+
+def fnHCOS_INV(valor):
+    """Arco cosseno hiperbólico (hcos⁻¹)"""
+    try:
+        valor_num = float(valor)
+        if valor_num >= 1:
+            return math.acosh(valor_num)
+        else:
+            return "Erro: (x ≥ 1)"
+    except:
+        return "Erro"
+
+def fnHTAN_INV(valor):
+    """Arco tangente hiperbólica (htan⁻¹)"""
+    try:
+        valor_num = float(valor)
+        if -1 < valor_num < 1:
+            return math.atanh(valor_num)
+        else:
+            return "Erro: (-1 < x < 1)"
+    except:
+        return "Erro"
+def fnSIN_INV(valor):
+    try:
+        valor_num = float(valor)
+        if -1 <= valor_num <= 1:
+            return math.degrees(math.asin(valor_num))
+        else:
+            return "Erro: sin⁻¹(x) requer (-1 ≤ x ≤ 1)"
+    except:
+        return "Erro"
+
+def fnCOS_INV(valor):
+    try:
+        valor_num = float(valor)
+        if -1 <= valor_num <= 1:
+            return math.degrees(math.acos(valor_num))
+        else:
+            return "Erro: cos⁻¹(x) requer (-1 ≤ x ≤ 1)"
+    except:
+        return "Erro"
+
+def fnTAN_INV(valor):
+    try:
+        return math.degrees(math.atan(float(valor))) 
+    except:
+        return "Erro"
 def fnSIN(valor):
-    valor_em_graus = converter_para_graus(valor)
-    resultado = math.sin(math.radians(valor_em_graus))
-    return str(resultado)
+    try:
+        valor_em_graus = converter_para_graus(valor)
+        resultado = math.sin(math.radians(valor_em_graus))
+        return resultado 
+    except Exception as e:
+        print(f"Erro em fnSIN: {e}")
+        return "Erro"
 
 def fnCOS(valor):
-    resultado = math.cos(math.radians(float(valor)))
-    return str(resultado)
+    try:
+        valor_em_graus = converter_para_graus(valor)
+        resultado = math.cos(math.radians(valor_em_graus))
+        return resultado  
+    except Exception as e:
+        print(f"Erro em fnCOS: {e}")
+        return "Erro"
 
 def fnTAN(valor):
-    resultado = math.tan(math.radians(float(valor)))
-    return str(resultado)
-
-#SIN_INV SENO INVERSO
-def fnSIN_INV(valor):
-    """Arco seno (sin⁻¹) - retorna em graus"""
     try:
-        return math.degrees(math.asin(float(valor)))
-    except:
+        valor_em_graus = converter_para_graus(valor)
+        resultado = math.tan(math.radians(valor_em_graus))
+        return resultado 
+    except Exception as e:
+        print(f"Erro em fnTAN: {e}")
         return "Erro"
     
-#COS_INV COSSENO INVERSO
-def fnCOS_INV(valor):
-    """Arco cosseno (cos⁻¹) - retorna em graus"""
-    try:
-        return math.degrees(math.acos(float(valor)))
-    except:
-        return "Erro"
-    
-#TAN_INV TANGENTE INVERSA
-def fnTAN_INV(valor):
-    """Arco tangente (tan⁻¹) - retorna em graus"""
-    try:
-        return math.degrees(math.atan(float(valor)))
-    except:
-        return "Erro"
 def fnExp(valor):
     try:
         resultado = 10 ** float(valor)
@@ -275,44 +345,7 @@ def processar_funcoes_inversas(conta):
             pass
     
     return conta
-def processar_simbolos_angulares(conta):
-    """
-    Processa símbolos angulares em funções trigonométricas
-    Ex: sin(45°) -> sin(45), cos(πr) -> cos(180), tan(100g) -> tan(90)
-    """
-    try:
-        # Padrões para encontrar funções trigonométricas com símbolos angulares
-        padroes = [
-            r'(sin|cos|tan)\(([^)]+)(°|r|g)\)',
-            r'(sin|cos|tan)\(([^)]+)(°|r|g)',
-        ]
-        
-        for padrao in padroes:
-            matches = re.finditer(padrao, conta, re.IGNORECASE)
-            for match in matches:
-                funcao = match.group(1) 
-                valor = match.group(2)  
-                simbolo = match.group(3) 
-                print(f"Processando: {funcao}({valor}{simbolo})")
-                
-               
-                valor_com_simbolo = valor + simbolo
-                valor_em_graus = converter_para_graus(valor_com_simbolo)
-                
-                print(f"Convertido: {valor_com_simbolo} -> {valor_em_graus} graus")
-                
-               
-                conta_original = f"{funcao}({valor}{simbolo})"
-                conta_nova = f"{funcao}({valor_em_graus})"
-                conta = conta.replace(conta_original, conta_nova)
-                
-                conta_original2 = f"{funcao}({valor}{simbolo}"
-                conta_nova2 = f"{funcao}({valor_em_graus}"
-                conta = conta.replace(conta_original2, conta_nova2)
-    
-    except Exception as e:
-        print(f"Erro em processar_simbolos_angulares: {e}")
-    
+
     return conta
 def remover_zeros_esquerda(expr):
 
@@ -360,8 +393,7 @@ def processar_completo(conta):
     
     conta = remover_zeros_esquerda(conta)
     
-    # Processa símbolos angulares dentro de funções trig
-    conta = processar_simbolos_angulares(conta)
+
     
     return conta
 

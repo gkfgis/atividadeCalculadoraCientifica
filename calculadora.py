@@ -280,6 +280,7 @@ def fnSoma_x2():
 def fnQuantidade_n():
     valores = get_slotValues()
     return sum(1 for v in valores if v != 0)
+
 def fnHSIN(valor):
     """Seno hiperbólico"""
     try:
@@ -304,48 +305,63 @@ def fnHTAN(valor):
 def fnHSIN_INV(valor):
     """Arco seno hiperbólico (hsin⁻¹)"""
     try:
-        return math.asinh(float(valor))
+        valor_num = float(valor)
+        # Aceita qualquer número real
+        return math.asinh(valor_num)
     except:
         return "Erro"
 
 def fnHCOS_INV(valor):
     """Arco cosseno hiperbólico (hcos⁻¹)"""
     try:
-        return math.acosh(float(valor))
+        valor_num = float(valor)
+        if valor_num >= 1:
+            return math.acosh(valor_num)
+        else:
+            return "Erro: (x ≥ 1)"
     except:
         return "Erro"
 
 def fnHTAN_INV(valor):
     """Arco tangente hiperbólica (htan⁻¹)"""
     try:
-        return math.atanh(float(valor))
+        valor_num = float(valor)
+        if -1 < valor_num < 1:
+            return math.atanh(valor_num)
+        else:
+            return "Erro: (-1 < x < 1)"
     except:
         return "Erro"
 def fnSIN_INV(valor):
-    """Arco seno (sin⁻¹) - retorna em graus"""
     try:
-        return math.degrees(math.asin(float(valor)))
+        valor_num = float(valor)
+        if -1 <= valor_num <= 1:
+            return math.degrees(math.asin(valor_num))
+        else:
+            return "Erro: sin⁻¹(x) requer (-1 ≤ x ≤ 1)"
     except:
         return "Erro"
 
 def fnCOS_INV(valor):
-    """Arco cosseno (cos⁻¹) - retorna em graus"""
     try:
-        return math.degrees(math.acos(float(valor)))
+        valor_num = float(valor)
+        if -1 <= valor_num <= 1:
+            return math.degrees(math.acos(valor_num))
+        else:
+            return "Erro: cos⁻¹(x) requer (-1 ≤ x ≤ 1)"
     except:
         return "Erro"
 
 def fnTAN_INV(valor):
-    """Arco tangente (tan⁻¹) - retorna em graus"""
     try:
-        return math.degrees(math.atan(float(valor)))
+        return math.degrees(math.atan(float(valor))) 
     except:
         return "Erro"
 def fnSIN(valor):
     try:
         valor_em_graus = converter_para_graus(valor)
         resultado = math.sin(math.radians(valor_em_graus))
-        return str(resultado)
+        return resultado 
     except Exception as e:
         print(f"Erro em fnSIN: {e}")
         return "Erro"
@@ -354,7 +370,7 @@ def fnCOS(valor):
     try:
         valor_em_graus = converter_para_graus(valor)
         resultado = math.cos(math.radians(valor_em_graus))
-        return str(resultado)
+        return resultado  
     except Exception as e:
         print(f"Erro em fnCOS: {e}")
         return "Erro"
@@ -363,15 +379,19 @@ def fnTAN(valor):
     try:
         valor_em_graus = converter_para_graus(valor)
         resultado = math.tan(math.radians(valor_em_graus))
-        return str(resultado)
+        return resultado 
     except Exception as e:
         print(f"Erro em fnTAN: {e}")
         return "Erro"
+    
 def converter_para_graus(valor_str):
-  
     try:
-        
+        if isinstance(valor_str, (int, float)):
+            return float(valor_str)
+            
         valor_str = str(valor_str).strip().lower()
+        
+        valor_str = valor_str.replace('(', '').replace(')', '')
         
         if '°' in valor_str:
             numero = valor_str.replace('°', '')
@@ -401,10 +421,11 @@ def converter_para_graus(valor_str):
             
     except ValueError as e:
         print(f"Erro ao converter {valor_str}: {e}")
-        return float(valor_str)  
+        return 0.0
     except Exception as e:
         print(f"Erro inesperado com {valor_str}: {e}")
         return 0.0
+    
 
 OPERADORES = {
     ast.Add: op.add,
@@ -451,14 +472,6 @@ FUNCOES = {
     'hasin': fnHSIN_INV, 
     'hacos': fnHCOS_INV,  
     'hatan': fnHTAN_INV,
-    
-    # ADICIONE ESTAS NOVAS FUNÇÕES:
-    'raiz': math.sqrt,           # raiz(x) - raiz quadrada
-    'cbrt': lambda x: x ** (1/3), # cbrt(x) - raiz cúbica
-    'quad': lambda x: x ** 2,     # quad(x) - quadrado
-    'cubo': lambda x: x ** 3,     # cubo(x) - cubo
-    'inv': lambda x: 1/x,         # inv(x) - inverso
-    'fat': math.factorial,        # fat(x) - fatorial
 }
 virgulas = True  
 operadores = [" + ", " - ", " X ", " ÷ ","sin("]
@@ -1234,32 +1247,6 @@ def formatarcontaessao(conta):
 
 
 
-
-def fnSIN(valor):
-    try:
-        print(f"fnSIN recebeu: {valor}")
-      
-        valor_em_graus = converter_para_graus(valor)
-        print(f"fnSIN convertido: {valor} -> {valor_em_graus} graus")
-        resultado = math.sin(math.radians(valor_em_graus))
-        return str(resultado)
-    except Exception as e:
-        print(f"Erro em fnSIN: {e}")
-        return "Erro"
-def fnCOS(valor):
-    try:
-        resultado = math.cos(math.radians(float(valor)))
-        return str(resultado)
-    except:
-        return "Erro"
-
-def fnTAN(valor):
-    try:
-        resultado = math.tan(math.radians(float(valor)))
-        return str(resultado)
-    except:
-        return "Erro"
-
 def processar_expressao_com_unidades(expressao):
     """
     Processa expressões com unidades angulares como: 3r + 45° * 2g
@@ -1322,20 +1309,19 @@ def calcular_cientifica(conta):
     global ans, memory_slots
     
     try:
-        conta = converter_notacao_inversa(conta)
-        conta = converter_notacao_hiperbolica_inversa(conta)
-        conta = processar_funcoes_inversas(conta)
-        conta = processar_funcoes_hiperbolicas(conta)
-        conta = processar_expressao_com_unidades(conta)
-        
-        # Resto do processamento normal...
         conta = conta.replace("Ans", str(ans))
 
         conta = conta.replace("^", "**")
         conta = conta.replace("π", str(math.pi))
         conta = conta.replace("X", "*").replace("÷", "/").replace(",", ".")
+        conta = converter_notacao_inversa(conta)
+        conta = converter_notacao_hiperbolica_inversa(conta)
+        conta = processar_funcoes_inversas(conta)
+        conta = processar_funcoes_hiperbolicas(conta)
+        conta = processar_expressao_com_unidades(conta)
         conta = remover_zeros_esquerda(conta)
-        conta = processar_simbolos_angulares(conta)
+     
+        
         for var, valor in memory_slots.items():
             conta = conta.replace(var, str(valor))
 
