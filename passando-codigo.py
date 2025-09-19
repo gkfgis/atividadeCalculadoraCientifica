@@ -384,16 +384,16 @@ def processar_completo(conta):
     
     # Substitui Ans e variáveis
     conta = conta.replace("Ans", str(ans))
-    for var, valor in memory_slots.items():
-        conta = conta.replace(var, str(valor))
+   
     
     # Símbolos matemáticos
     conta = conta.replace("π", str(math.pi))
     conta = conta.replace("X", "*").replace("÷", "/").replace(",", ".")
     
-    conta = remover_zeros_esquerda(conta)
     
-
+    for var, valor in memory_slots.items():
+        conta = conta.replace(var, str(valor))
+    conta = remover_zeros_esquerda(conta)
     
     return conta
 

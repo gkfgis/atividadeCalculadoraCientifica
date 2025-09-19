@@ -1305,10 +1305,7 @@ def processar_funcoes_inversas(conta):
             pass
     
     return conta
-def calcular_cientifica(conta):
-    global ans, memory_slots
-    
-    try:
+def processar_completo(conta):
         conta = conta.replace("Ans", str(ans))
 
         conta = conta.replace("^", "**")
@@ -1328,7 +1325,13 @@ def calcular_cientifica(conta):
         abertos = conta.count('(')
         fechados = conta.count(')')
         conta += ')' * (abertos - fechados)
-        
+
+        return conta
+def calcular_cientifica(conta):
+    global ans, memory_slots
+    
+    try:
+        conta = processar_completo(conta)
         tree = ast.parse(conta, mode='eval')
 
         def _eval(node):
