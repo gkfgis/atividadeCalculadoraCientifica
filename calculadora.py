@@ -40,7 +40,7 @@ memory_slots = {
 
 
 
-################# CODIGO ADICIONADO GRUPO CAIKE ####################
+################# CODIGO ADICIONADO GRUPO MARIA ####################
 def processar_operador_basico(operador):
     global operation, Number1
     
@@ -202,7 +202,7 @@ def calc_exponenciacao():
             Display.set(Number1)
     except:
         Display.set("Erro")
-################# FIM DO CODIGO ADICIONADO GRUPO CAIKE ####################
+################# FIM DO CODIGO ADICIONADO GRUPO MARIA ####################
 def  fnPi():
     pi = math.pi
 menu_drg_ativo = False
