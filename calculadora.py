@@ -1,5 +1,6 @@
 from tkinter import *
 from tkinter import ttk
+from tkinter import simpledialog, messagebox
 import tkinter as tk
 import math
 import ast
@@ -32,8 +33,244 @@ memory_slots = {
   "Y": "0",
   "M": "0"
 }
+# LEANDRO
+historico = []  
+indice_historico = -1  
+posicao_cursor = 0  
+modo_cursor = False  
+lastNumber = "0"
+round_mode = "norm"
+round_digits = 2
+degreeSign = "°"
+minuteSign = "'"
+secondSign = '"'
+# LEANDRO
+################# CODIGO ADICIONADO GRUPO RAMOS ####################
+def vld_slots():
+    """Return list of valid slot keys."""
+    return list(memory_slots.keys())
 
+def is_valid_slot(slot: str) -> bool:
+    if not slot or not isinstance(slot, str):
+        return False
+    return slot.strip().upper() in memory_slots
 
+def set_memory(slot: str, value: str) -> bool:
+    if not isinstance(slot, str):
+        return False
+    s = slot.strip().upper()
+    if s in memory_slots:
+        memory_slots[s] = value
+        return True
+    return False
+
+def get_memory(slot: str):
+    if not isinstance(slot, str):
+        return None
+    return memory_slots.get(slot.strip().upper(), None)
+
+def get_round_settings():
+    return round_mode, round_digits
+
+def set_round_mode(mode: str):
+    global round_mode
+    if mode in ("norm", "fix", "sci", "rnd"):
+        round_mode = mode
+
+def set_round_digits(n: int):
+    global round_digits
+    try:
+        round_digits = max(0, int(n))
+    except Exception:
+        pass
+    ############################
+def convertDecimal(value):
+        if isinstance(value, str):
+            vnorm = value.strip().replace(",", ".")
+        else:
+            vnorm = str(value)
+
+        try:
+            num = float(vnorm)
+        except Exception:
+            raise ValueError(f"Valor inválido para conversão: {value!r}")
+
+        sign = "-" if num < 0 else ""
+        a = abs(num)
+        degrees = int(a)
+        rem_minutes = (a - degrees) * 60.0
+        minutes = int(rem_minutes)
+        seconds = (rem_minutes - minutes) * 60.0
+        precision_seconds = 2
+        seconds = round(seconds, precision_seconds)
+
+        if seconds >= 60.0:
+            seconds -= 60.0
+            minutes += 1
+        if minutes >= 60:
+            minutes -= 60
+            degrees += 1
+
+        if float(seconds).is_integer():
+            sec_str = str(int(round(seconds)))
+        else:
+            raw = f"{seconds:.{precision_seconds}f}"
+            raw = raw.rstrip("0").rstrip(".")
+            sec_str = raw
+
+        formatted = f"{sign}{degrees}{degreeSign}{minutes}{minuteSign}{sec_str}{secondSign}"
+        return formatted
+##########################
+def _ask_slot(parent, title):
+    prompt = "Escolha um slot de memória (ex: A, B, C, ...):"
+    slot = simpledialog.askstring(title, prompt, parent=parent)
+    if not slot:
+        return None
+    slot = slot.strip().upper()
+    if not is_valid_slot(slot):
+        messagebox.showerror("Slot inválido", f"Slot '{slot}' inválido.\nUse: {', '.join(vld_slots())}", parent=parent)
+        return None
+    return slot
+
+def _sto():
+    slot = _ask_slot(root, "STO (armazenar)")
+    if not slot:
+        return
+    val = Number1
+    if not ciencia:  # Modo normal usa vírgula
+        val = val.replace(",", ".")
+    if set_memory(slot, val):
+        messagebox.showinfo("STO", f"Valor armazenado em {slot}", parent=root)
+    else:
+        messagebox.showerror("STO", f"Não foi possível armazenar em {slot}", parent=root)
+
+def _rcl():
+    slot = _ask_slot(root, "RCL (recuperar)")
+    if not slot:
+        return
+    val = get_memory(slot)
+    if val is None:
+        messagebox.showerror("Erro", f"Nenhum valor em {slot}", parent=root)
+        return
+    if not ciencia:  # Modo normal usa vírgula
+        val = val.replace(".", ",")
+    
+    global Number1
+    if Number1 == "0" or Number1 == "":
+        Number1 = val
+    else:
+        Number1 += val
+    
+    Display.set(formatarcontaessao(Number1))
+    ####################
+def format_result(value, is_cientifica):
+        try:
+            mode, digits = get_round_settings()
+            if mode == "fix":
+                out = f"{value:.{digits}f}"
+            elif mode == "sci":
+                sig = max(1, int(digits))
+                out = f"{value:.{sig}e}"
+            else:
+                out = f"{value:.12g}"
+            
+            if not is_cientifica:
+                out = out.replace(".", ",")
+            return out
+        except Exception:
+            return "Erro"
+###########
+def swapSignals():
+    """Função para inverter sinal (-) - Adaptada do Grupo Leandro"""
+    global Number1, Display
+    try:
+        expr = Number1
+        
+        # Padrão 1: sinal no início do número
+        m1 = re.search(r"([+-]?)(\d*+(?:[.,]\d+)?)$", expr)
+        
+        if m1:
+            op = m1.group(1)
+            num = m1.group(2)
+            num_norm = num.replace(",", ".")
+
+            try:
+                if float(num_norm) == 0:
+                    return
+            except Exception:
+                return
+            
+            num_sem_sinal = num.lstrip("+-")
+            novo_op = "-" if op != "-" else "+"
+            nova_expr = expr[:m1.start(1)] + novo_op + num_sem_sinal
+            Number1 = nova_expr
+            Display.set(formatarcontaessao(Number1))
+            return
+
+        # Padrão 2: número com sinal
+        m2 = re.search(r"([+-]?\d*+([.,]\d+)?)$", expr)
+        
+        if m2:
+            num = m2.group(1)
+            num_norm = num.replace(",", ".")
+            
+            try:
+                f = float(num_norm)
+            except Exception:
+                return
+
+            if f == 0:
+                return
+
+            if num.startswith("-"):
+                novo_num = num[1:]
+            else:
+                novo_num = "-" + num
+
+            nova_expr = expr[:-len(num)] + novo_num
+            Number1 = nova_expr
+            Display.set(formatarcontaessao(Number1))
+            return
+
+    except Exception as e:
+        print(f"Erro ao trocar sinal: {e}")
+
+def inserir_virgula_ponto():
+    """Função para inserir vírgula/ponto (., ,,) - Adaptada do Grupo Leandro"""
+    global Number1, virgulas
+    
+    if not virgulas:
+        return
+    
+    separador = "." if ciencia else ","
+    
+    # Verificar se já existe um separador no número atual
+    for oper in operadores:
+        if oper in Number1:
+            partes = Number1.split(oper)
+            if partes[-1] == "":
+                partes[-1] = "0" + separador
+            else:
+                # Verificar se já tem separador no último número
+                if separador in partes[-1]:
+                    return
+                partes[-1] += separador
+            Number1 = oper.join(partes)
+            virgulas = False
+            Display.set(formatarcontaessao(Number1))
+            return
+    
+    if Number1 == "":
+        Number1 = "0" + separador
+    else:
+        # Verificar se já tem separador
+        if separador in Number1 and not any(op in Number1 for op in operadores):
+            return
+        Number1 += separador
+    
+    virgulas = False
+    Display.set(formatarcontaessao(Number1))
+################# FIM CODIGO GRUPO RAMOS ####################
 
 
 
@@ -224,7 +461,15 @@ def ativar_menu_drg():
     global menu_drg_ativo
     menu_drg_ativo = True
     Display.set("D-1 R-2 G-3")
+def inserir_parentese_esquerdo():
+    global Number1
+    Number1 += "("
+    Display.set(Number1)
 
+def inserir_parentese_direito():
+    global Number1
+    Number1 += ")"
+    Display.set(Number1)
 def inserir_simbolo_angular(opcao):
     """Insere o símbolo angular baseado na opção escolhida"""
     global menu_drg_ativo, Number1
@@ -750,10 +995,10 @@ def socorro_me_ajuda(oi):
         but22.place(x=(xaux) - xauxoffset, y=yaux * (2.175) - yauxoffset + 25)
         text8.place(x=(xaux) - xauxoffset + 10, y=yaux * (2.85) - yauxoffset + 11)
         butC15.place(x=(xaux) - xauxoffset, y=yaux * (2.85) - yauxoffset + 25)
-        butC15.config(height=1, width=3)
+        butC15.config(height=1, width=3, command=lambda: swapSignals())
         text9.place(x=(xaux) - xauxoffset + 5, y=yaux * (3.55) - yauxoffset + 10)
         butC16.place(x=(xaux) - xauxoffset, y=yaux * (3.55) - yauxoffset + 25)
-        butC16.config(height=1, width=3)
+        butC16.config(height=1, width=3,command=lambda: _sto() if shift else _rcl())
         
                         ### COLUNA CIENTIFICA 2
                       
@@ -768,7 +1013,7 @@ def socorro_me_ajuda(oi):
         text11.place(x=(xaux * 3.5) - xauxoffset, y=yaux * (2.85) - yauxoffset + 12)
         text12.place(x=(xaux * 3.5) - xauxoffset + 20, y=yaux * (2.85) - yauxoffset + 12)
         butC24.place(x=(xaux * 3.5) - xauxoffset, y=yaux * (2.85) - yauxoffset + 25)
-        butC24.config(height=1, width=3)
+        butC24.config(height=1, width=3, command=lambda:inserir_virgula_ponto())
         text13.place(x=(xaux * 3.5) - xauxoffset + 10, y=yaux * (3.55) - yauxoffset + 12)
         butC25.place(x=(xaux * 3.5) - xauxoffset, y=yaux * (3.55) - yauxoffset + 25)
         butC25.config(height=1, width=3)
@@ -785,7 +1030,7 @@ def socorro_me_ajuda(oi):
         butC34.place(x=(xaux * 5.9) - xauxoffset, y=yaux * (2.85) - yauxoffset + 25)
         butC34.config(height=1, width=3, command=lambda:inserir_H())
         butC35.place(x=(xaux * 5.9) - xauxoffset, y=yaux * (3.55) - yauxoffset + 25)
-        butC35.config(height=1, width=3)
+        butC35.config(height=1, width=3,command=lambda: inserir_parentese_esquerdo())
         
                         ### COLUNA CIENTIFICA 4
         
@@ -798,7 +1043,7 @@ def socorro_me_ajuda(oi):
         butC44.config(height=1, width=3, command=lambda:(inserir_sin()))
         text18.place(x=(xaux * 8.5) - xauxoffset + 10, y=yaux * (3.55) - yauxoffset + 12)
         butC45.place(x=(xaux * 8.5) - xauxoffset, y=yaux * (3.55) - yauxoffset + 25)
-        butC45.config(height=1, width=3)
+        butC45.config(height=1, width=3,command=lambda: inserir_parentese_direito())
         
                         ### COLUNA CIENTIFICA 5
 
@@ -819,7 +1064,7 @@ def socorro_me_ajuda(oi):
         text24.place(x=(xaux * 11) - xauxoffset, y=yaux * (3.55) - yauxoffset + 12)
         text25.place(x=(xaux * 11) - xauxoffset + 20, y=yaux * (3.55) - yauxoffset + 12)
         butC55.place(x=(xaux * 11) - xauxoffset, y=yaux * (3.55) - yauxoffset + 25)
-        butC55.config(height=1, width=3)
+        butC55.config(height=1, width=3, command=lambda: inserir_virgula())
         
                         ### COLUNA CIENTIFICA 6
         
@@ -1224,11 +1469,12 @@ def resultado():
     else:
         resultado = calcular(Number1)
     
-    if resultado == "Não é possível dividir por zero" or resultado == "Erro":
+    if resultado == "Não é possível dividir por zero" or resultado == "Erro" or "Erro:" in str(resultado):
         limpar()
         Display.set("Erro")
     else:
-        Number1 = str(resultado)
+        resultado_formatado = format_result(resultado, ciencia)
+        Number1 = resultado_formatado
         Display.set(formatarcontaessao(Number1))
         virgulas = True
 def formatarcontaessao(conta):
@@ -1306,27 +1552,33 @@ def processar_funcoes_inversas(conta):
     
     return conta
 def processar_completo(conta):
-        conta = conta.replace("Ans", str(ans))
+    conta = conta.replace("Ans", str(ans))
+    conta = conta.replace("^", "**")
+    conta = conta.replace("π", str(math.pi))
+    conta = conta.replace("X", "*").replace("÷", "/")
+    
+    # Processar graus, minutos, segundos
+    graus_pattern = r"(\d+)°(\d+)'([\d.]+)\""
+    matches = re.findall(graus_pattern, conta)
+    for graus, minutos, segundos in matches:
+        valor_decimal = float(graus) + float(minutos)/60 + float(segundos)/3600
+        conta = conta.replace(f"{graus}°{minutos}'{segundos}\"", str(valor_decimal))
+    
+    conta = converter_notacao_inversa(conta)
+    conta = converter_notacao_hiperbolica_inversa(conta)
+    conta = processar_funcoes_inversas(conta)
+    conta = processar_funcoes_hiperbolicas(conta)
+    conta = processar_expressao_com_unidades(conta)
+    conta = remover_zeros_esquerda(conta)
+    
+    for var, valor in memory_slots.items():
+        conta = conta.replace(var, str(valor))
 
-        conta = conta.replace("^", "**")
-        conta = conta.replace("π", str(math.pi))
-        conta = conta.replace("X", "*").replace("÷", "/").replace(",", ".")
-        conta = converter_notacao_inversa(conta)
-        conta = converter_notacao_hiperbolica_inversa(conta)
-        conta = processar_funcoes_inversas(conta)
-        conta = processar_funcoes_hiperbolicas(conta)
-        conta = processar_expressao_com_unidades(conta)
-        conta = remover_zeros_esquerda(conta)
-     
-        
-        for var, valor in memory_slots.items():
-            conta = conta.replace(var, str(valor))
+    abertos = conta.count('(')
+    fechados = conta.count(')')
+    conta += ')' * (abertos - fechados)
 
-        abertos = conta.count('(')
-        fechados = conta.count(')')
-        conta += ')' * (abertos - fechados)
-
-        return conta
+    return conta
 def calcular_cientifica(conta):
     global ans, memory_slots
     
