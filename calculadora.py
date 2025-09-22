@@ -45,6 +45,163 @@ degreeSign = "°"
 minuteSign = "'"
 secondSign = '"'
 # LEANDRO
+# LUCAS - Variáveis adicionais
+memoria = 0  # Valor global da memória
+current_mode = "COMP"  # padrão inicial = cálculo normal
+
+########################################### GRUPO LUCAS ####################################
+
+def toggle_shift():
+    """Alternar estado do Shift"""
+    global shift
+    shift = not shift
+    # Atualizar interface se necessário
+    print(f"Shift: {shift}")
+
+def toggle_alpha():
+    """Alternar estado do Alpha"""
+    global alpha
+    alpha = not alpha
+    # Atualizar interface se necessário
+    print(f"Alpha: {alpha}")
+
+def atualizar_painel_cursor():
+    """Atualizar display com cursor de edição"""
+    global Number1, posicao_cursor, operation
+    
+    texto = Number1
+    
+    # Inserindo o cursor na posição correta
+    if posicao_cursor > len(texto):
+        posicao = len(texto)
+    else:
+        posicao = posicao_cursor
+    
+    texto_cursor = texto[:posicao] + "|" + texto[posicao:]
+    Display.set(texto_cursor)
+
+def replay_cima():
+    """Navegar para cima no histórico"""
+    global indice_historico, historico, Number1
+    
+    if historico:
+        if indice_historico == -1:
+            indice_historico = len(historico) - 1
+        elif indice_historico > 0:
+            indice_historico -= 1
+        
+        # Recuperar resultado do histórico
+        resultado = historico[indice_historico]
+        Number1 = str(resultado)
+        Display.set(formatarcontaessao(Number1))
+
+def replay_baixo():
+    """Navegar para baixo no histórico"""
+    global indice_historico, historico, Number1
+    
+    if historico:
+        if indice_historico == -1:
+            indice_historico = len(historico) - 1
+        elif indice_historico < len(historico) - 1:
+            indice_historico += 1
+        
+        # Recuperar resultado do histórico
+        resultado = historico[indice_historico]
+        Number1 = str(resultado)
+        Display.set(formatarcontaessao(Number1))
+
+def replay_esquerda():
+    """Mover cursor para esquerda"""
+    global posicao_cursor, modo_cursor
+    modo_cursor = True
+    if posicao_cursor > 0:
+        posicao_cursor -= 1
+    atualizar_painel_cursor()
+
+def replay_direita():
+    """Mover cursor para direita"""
+    global posicao_cursor, modo_cursor
+    modo_cursor = True
+    if posicao_cursor < len(Number1):
+        posicao_cursor += 1
+    atualizar_painel_cursor()
+
+def func_m_plus():
+    """Funções M+, M-, MR (Memory)"""
+    global memoria, Number1, shift, alpha
+    
+    try:
+        if alpha:
+            # Recupera o valor da memória (MR)
+            Display.set(f"M={formatarcontaessao(str(memoria))}")
+            return
+
+        # Obter valor atual do display
+        valor_str = Number1.replace(",", ".")
+        valor = float(valor_str)
+
+        if shift:
+            # M- (Subtract from memory)
+            memoria -= valor
+            Display.set(f"M- → {formatarcontaessao(str(memoria))}")
+        else:
+            # M+ (Add to memory)
+            memoria += valor
+            Display.set(f"M+ → {formatarcontaessao(str(memoria))}")
+            
+    except ValueError:
+        Display.set("Erro!")
+
+def toggle_mode():
+    """Alternar entre modos COMP/STAT/TABLE"""
+    global current_mode
+    
+    # Criar janela popup
+    mode_window = tk.Toplevel(root)
+    mode_window.title("Selecionar Modo")
+    mode_window.geometry("250x200")
+    mode_window.resizable(False, False)
+    mode_window.transient(root)  # Torna a janela modal
+    mode_window.grab_set()
+
+    # Centralizar na tela
+    mode_window.update_idletasks()
+    x = (mode_window.winfo_screenwidth() // 2) - (250 // 2)
+    y = (mode_window.winfo_screenheight() // 2) - (200 // 2)
+    mode_window.geometry(f"250x200+{x}+{y}")
+
+    # Label de instrução
+    tk.Label(mode_window, text="Selecione o modo:", font=("Arial", 12)).pack(pady=10)
+
+    # Função para definir o modo
+    def set_mode(mode):
+        global current_mode
+        current_mode = mode
+        Display.set(f"Modo: {current_mode}")
+        mode_window.destroy()
+
+    # Botões para cada modo
+    tk.Button(mode_window, text="1. COMP (Normal)", width=20, 
+              command=lambda: set_mode("COMP")).pack(pady=5)
+    tk.Button(mode_window, text="2. STAT (Estatística)", width=20, 
+              command=lambda: set_mode("STAT")).pack(pady=5)
+    tk.Button(mode_window, text="3. TABLE (Tabela)", width=20, 
+              command=lambda: set_mode("TABLE")).pack(pady=5)
+
+    # Botão cancelar
+    tk.Button(mode_window, text="Cancelar", width=20, 
+              command=mode_window.destroy).pack(pady=5)
+
+def adicionar_ao_historico(resultado):
+    """Adicionar resultado ao histórico para replay"""
+    global historico, indice_historico
+    historico.append(resultado)
+    indice_historico = len(historico) - 1
+
+# Modificar a função resultado() para usar o histórico
+
+
+########################################### FIM GRUPO LUCAS ####################################
 ################# CODIGO ADICIONADO GRUPO RAMOS ####################
 def vld_slots():
     """Return list of valid slot keys."""
@@ -979,7 +1136,7 @@ def socorro_me_ajuda(oi):
         text11.place(x=(xaux * 3.5) - xauxoffset, y=yaux * (2.85) - yauxoffset + 12)
         text12.place(x=(xaux * 3.5) - xauxoffset + 20, y=yaux * (2.85) - yauxoffset + 12)
         butC24.place(x=(xaux * 3.5) - xauxoffset, y=yaux * (2.85) - yauxoffset + 25)
-        butC24.config(height=1, width=3, command=lambda:inserir_virgula_ponto())
+        butC24.config(height=1, width=3)
         text13.place(x=(xaux * 3.5) - xauxoffset + 10, y=yaux * (3.55) - yauxoffset + 12)
         butC25.place(x=(xaux * 3.5) - xauxoffset, y=yaux * (3.55) - yauxoffset + 25)
         butC25.config(height=1, width=3)
@@ -987,9 +1144,13 @@ def socorro_me_ajuda(oi):
                         ### COLUNA CIENTIFICA 3
                         
         butCrep1.place(x=(xaux * 7.2) - xauxoffset, y=yaux * (0.85) - yauxoffset + 25)
+        butCrep1.config(command=lambda: replay_cima())
         butCrep4.place(x=(xaux * 5.9) - xauxoffset, y=yaux * (1.175) - yauxoffset + 25)
+        butCrep4.config(command=lambda: replay_esquerda())
         butCrep3.place(x=(xaux * 7.2) - xauxoffset, y=yaux * (1.5) - yauxoffset + 25)
-        butCrep2.place(x=(xaux * 8.5) - xauxoffset, y=yaux * (1.175) - yauxoffset + 25)
+        butCrep3.config(command=lambda: replay_baixo())
+        butCrep2.place(x=(xaux * 8.5) - xauxoffset, y=yaux * (1.175) - yauxoffset +25 )
+        butCrep2.config(command=lambda: replay_direita())
         butC33.place(x=(xaux * 5.9) - xauxoffset, y=yaux * (2.175) - yauxoffset + 25)
         butC33.config(height=1, width=3,command=calc_quadrado)
         text14.place(x=(xaux * 5.9) - xauxoffset + 20, y=yaux * (2.85) - yauxoffset + 12)
@@ -1015,7 +1176,7 @@ def socorro_me_ajuda(oi):
 
         text3.place(x=(xaux * 11) - xauxoffset - 2, y=yaux * (0.85) - yauxoffset + 11)
         butC51.place(x=(xaux * 11) - xauxoffset, y=yaux * (0.85) - yauxoffset + 25)
-        butC51.config(height=1, width=3)
+        butC51.config(height=1, width=3,command=lambda: toggle_mode())
         text19.place(x=(xaux * 11) - xauxoffset, y=yaux * (1.5) - yauxoffset + 12)
         text20.place(x=(xaux * 11) - xauxoffset + 25, y=yaux * (1.5) - yauxoffset + 12)
         butC52.place(x=(xaux * 11) - xauxoffset, y=yaux * (1.5) - yauxoffset + 25)
@@ -1053,7 +1214,7 @@ def socorro_me_ajuda(oi):
         text32.place(x=(xaux * 13.5) - xauxoffset + 20, y=yaux * (3.55) - yauxoffset + 12)
         text33.place(x=(xaux * 13.5) - xauxoffset, y=yaux * (4.175) - yauxoffset + 12)
         butC65.place(x=(xaux * 13.5) - xauxoffset, y=yaux * (3.55) - yauxoffset + 25)
-        butC65.config(height=1, width=3)
+        butC65.config(height=1, width=3, command=lambda: func_m_plus())
         
         output.place(x = 19 - xauxoffset, y = 35 - yauxoffset)
         output.config(width= 23)
@@ -1428,7 +1589,7 @@ def inserir_operador(value):
 
     Display.set(formatarcontaessao(Number1))
 def resultado():
-    global Number1, virgulas, ciencia
+    global Number1, virgulas, ciencia, historico
     
     if ciencia:
         resultado = calcular_cientifica(Number1)
@@ -1443,6 +1604,8 @@ def resultado():
         Number1 = resultado_formatado
         Display.set(formatarcontaessao(Number1))
         virgulas = True
+        
+        adicionar_ao_historico(resultado)
 def formatarcontaessao(conta):
     global ciencia
     if ciencia:
