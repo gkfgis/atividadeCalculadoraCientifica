@@ -234,42 +234,8 @@ def swapSignals():
 
     except Exception as e:
         print(f"Erro ao trocar sinal: {e}")
+#############
 
-def inserir_virgula_ponto():
-    """Função para inserir vírgula/ponto (., ,,) - Adaptada do Grupo Leandro"""
-    global Number1, virgulas
-    
-    if not virgulas:
-        return
-    
-    separador = "." if ciencia else ","
-    
-    # Verificar se já existe um separador no número atual
-    for oper in operadores:
-        if oper in Number1:
-            partes = Number1.split(oper)
-            if partes[-1] == "":
-                partes[-1] = "0" + separador
-            else:
-                # Verificar se já tem separador no último número
-                if separador in partes[-1]:
-                    return
-                partes[-1] += separador
-            Number1 = oper.join(partes)
-            virgulas = False
-            Display.set(formatarcontaessao(Number1))
-            return
-    
-    if Number1 == "":
-        Number1 = "0" + separador
-    else:
-        # Verificar se já tem separador
-        if separador in Number1 and not any(op in Number1 for op in operadores):
-            return
-        Number1 += separador
-    
-    virgulas = False
-    Display.set(formatarcontaessao(Number1))
 ################# FIM CODIGO GRUPO RAMOS ####################
 
 
