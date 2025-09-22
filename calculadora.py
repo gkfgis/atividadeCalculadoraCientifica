@@ -1,5 +1,6 @@
 from tkinter import *
 from tkinter import ttk
+from tkinter import simpledialog, messagebox
 import tkinter as tk
 import math
 import ast
@@ -32,8 +33,367 @@ memory_slots = {
   "Y": "0",
   "M": "0"
 }
+# LEANDRO
+historico = []  
+indice_historico = -1  
+posicao_cursor = 0  
+modo_cursor = False  
+lastNumber = "0"
+round_mode = "norm"
+round_digits = 2
+degreeSign = "°"
+minuteSign = "'"
+secondSign = '"'
+# LEANDRO
+# LUCAS - Variáveis adicionais
+memoria = 0  # Valor global da memória
+current_mode = "COMP"  # padrão inicial = cálculo normal
+
+########################################### GRUPO LUCAS ####################################
+
+def toggle_shift():
+    """Alternar estado do Shift"""
+    global shift
+    shift = not shift
+    # Atualizar interface se necessário
+    print(f"Shift: {shift}")
+
+def toggle_alpha():
+    """Alternar estado do Alpha"""
+    global alpha
+    alpha = not alpha
+    # Atualizar interface se necessário
+    print(f"Alpha: {alpha}")
+
+def atualizar_painel_cursor():
+    """Atualizar display com cursor de edição"""
+    global Number1, posicao_cursor, operation
+    
+    texto = Number1
+    
+    # Inserindo o cursor na posição correta
+    if posicao_cursor > len(texto):
+        posicao = len(texto)
+    else:
+        posicao = posicao_cursor
+    
+    texto_cursor = texto[:posicao] + "|" + texto[posicao:]
+    Display.set(texto_cursor)
+
+def replay_cima():
+    """Navegar para cima no histórico"""
+    global indice_historico, historico, Number1
+    
+    if historico:
+        if indice_historico == -1:
+            indice_historico = len(historico) - 1
+        elif indice_historico > 0:
+            indice_historico -= 1
+        
+        # Recuperar resultado do histórico
+        resultado = historico[indice_historico]
+        Number1 = str(resultado)
+        Display.set(formatarcontaessao(Number1))
+
+def replay_baixo():
+    """Navegar para baixo no histórico"""
+    global indice_historico, historico, Number1
+    
+    if historico:
+        if indice_historico == -1:
+            indice_historico = len(historico) - 1
+        elif indice_historico < len(historico) - 1:
+            indice_historico += 1
+        
+        # Recuperar resultado do histórico
+        resultado = historico[indice_historico]
+        Number1 = str(resultado)
+        Display.set(formatarcontaessao(Number1))
+
+def replay_esquerda():
+    """Mover cursor para esquerda"""
+    global posicao_cursor, modo_cursor
+    modo_cursor = True
+    if posicao_cursor > 0:
+        posicao_cursor -= 1
+    atualizar_painel_cursor()
+
+def replay_direita():
+    """Mover cursor para direita"""
+    global posicao_cursor, modo_cursor
+    modo_cursor = True
+    if posicao_cursor < len(Number1):
+        posicao_cursor += 1
+    atualizar_painel_cursor()
+
+def func_m_plus():
+    """Funções M+, M-, MR (Memory)"""
+    global memoria, Number1, shift, alpha
+    
+    try:
+        if alpha:
+            # Recupera o valor da memória (MR)
+            Display.set(f"M={formatarcontaessao(str(memoria))}")
+            return
+
+        # Obter valor atual do display
+        valor_str = Number1.replace(",", ".")
+        valor = float(valor_str)
+
+        if shift:
+            # M- (Subtract from memory)
+            memoria -= valor
+            Display.set(f"M- → {formatarcontaessao(str(memoria))}")
+        else:
+            # M+ (Add to memory)
+            memoria += valor
+            Display.set(f"M+ → {formatarcontaessao(str(memoria))}")
+            
+    except ValueError:
+        Display.set("Erro!")
+
+def toggle_mode():
+    """Alternar entre modos COMP/STAT/TABLE"""
+    global current_mode
+    
+    # Criar janela popup
+    mode_window = tk.Toplevel(root)
+    mode_window.title("Selecionar Modo")
+    mode_window.geometry("250x200")
+    mode_window.resizable(False, False)
+    mode_window.transient(root)  # Torna a janela modal
+    mode_window.grab_set()
+
+    # Centralizar na tela
+    mode_window.update_idletasks()
+    x = (mode_window.winfo_screenwidth() // 2) - (250 // 2)
+    y = (mode_window.winfo_screenheight() // 2) - (200 // 2)
+    mode_window.geometry(f"250x200+{x}+{y}")
+
+    # Label de instrução
+    tk.Label(mode_window, text="Selecione o modo:", font=("Arial", 12)).pack(pady=10)
+
+    # Função para definir o modo
+    def set_mode(mode):
+        global current_mode
+        current_mode = mode
+        Display.set(f"Modo: {current_mode}")
+        mode_window.destroy()
+
+    # Botões para cada modo
+    tk.Button(mode_window, text="1. COMP (Normal)", width=20, 
+              command=lambda: set_mode("COMP")).pack(pady=5)
+    tk.Button(mode_window, text="2. STAT (Estatística)", width=20, 
+              command=lambda: set_mode("STAT")).pack(pady=5)
+    tk.Button(mode_window, text="3. TABLE (Tabela)", width=20, 
+              command=lambda: set_mode("TABLE")).pack(pady=5)
+
+    # Botão cancelar
+    tk.Button(mode_window, text="Cancelar", width=20, 
+              command=mode_window.destroy).pack(pady=5)
+
+def adicionar_ao_historico(resultado):
+    """Adicionar resultado ao histórico para replay"""
+    global historico, indice_historico
+    historico.append(resultado)
+    indice_historico = len(historico) - 1
+
+# Modificar a função resultado() para usar o histórico
 
 
+########################################### FIM GRUPO LUCAS ####################################
+################# CODIGO ADICIONADO GRUPO RAMOS ####################
+def vld_slots():
+    """Return list of valid slot keys."""
+    return list(memory_slots.keys())
+
+def is_valid_slot(slot: str) -> bool:
+    if not slot or not isinstance(slot, str):
+        return False
+    return slot.strip().upper() in memory_slots
+
+def set_memory(slot: str, value: str) -> bool:
+    if not isinstance(slot, str):
+        return False
+    s = slot.strip().upper()
+    if s in memory_slots:
+        memory_slots[s] = value
+        return True
+    return False
+
+def get_memory(slot: str):
+    if not isinstance(slot, str):
+        return None
+    return memory_slots.get(slot.strip().upper(), None)
+
+def get_round_settings():
+    return round_mode, round_digits
+
+def set_round_mode(mode: str):
+    global round_mode
+    if mode in ("norm", "fix", "sci", "rnd"):
+        round_mode = mode
+
+def set_round_digits(n: int):
+    global round_digits
+    try:
+        round_digits = max(0, int(n))
+    except Exception:
+        pass
+    ############################
+def convertDecimal(value):
+        if isinstance(value, str):
+            vnorm = value.strip().replace(",", ".")
+        else:
+            vnorm = str(value)
+
+        try:
+            num = float(vnorm)
+        except Exception:
+            raise ValueError(f"Valor inválido para conversão: {value!r}")
+
+        sign = "-" if num < 0 else ""
+        a = abs(num)
+        degrees = int(a)
+        rem_minutes = (a - degrees) * 60.0
+        minutes = int(rem_minutes)
+        seconds = (rem_minutes - minutes) * 60.0
+        precision_seconds = 2
+        seconds = round(seconds, precision_seconds)
+
+        if seconds >= 60.0:
+            seconds -= 60.0
+            minutes += 1
+        if minutes >= 60:
+            minutes -= 60
+            degrees += 1
+
+        if float(seconds).is_integer():
+            sec_str = str(int(round(seconds)))
+        else:
+            raw = f"{seconds:.{precision_seconds}f}"
+            raw = raw.rstrip("0").rstrip(".")
+            sec_str = raw
+
+        formatted = f"{sign}{degrees}{degreeSign}{minutes}{minuteSign}{sec_str}{secondSign}"
+        return formatted
+##########################
+def _ask_slot(parent, title):
+    prompt = "Escolha um slot de memória (ex: A, B, C, ...):"
+    slot = simpledialog.askstring(title, prompt, parent=parent)
+    if not slot:
+        return None
+    slot = slot.strip().upper()
+    if not is_valid_slot(slot):
+        messagebox.showerror("Slot inválido", f"Slot '{slot}' inválido.\nUse: {', '.join(vld_slots())}", parent=parent)
+        return None
+    return slot
+
+def _sto():
+    slot = _ask_slot(root, "STO (armazenar)")
+    if not slot:
+        return
+    val = Number1
+    if not ciencia:  # Modo normal usa vírgula
+        val = val.replace(",", ".")
+    if set_memory(slot, val):
+        messagebox.showinfo("STO", f"Valor armazenado em {slot}", parent=root)
+    else:
+        messagebox.showerror("STO", f"Não foi possível armazenar em {slot}", parent=root)
+
+def _rcl():
+    slot = _ask_slot(root, "RCL (recuperar)")
+    if not slot:
+        return
+    val = get_memory(slot)
+    if val is None:
+        messagebox.showerror("Erro", f"Nenhum valor em {slot}", parent=root)
+        return
+    if not ciencia:  # Modo normal usa vírgula
+        val = val.replace(".", ",")
+    
+    global Number1
+    if Number1 == "0" or Number1 == "":
+        Number1 = val
+    else:
+        Number1 += val
+    
+    Display.set(formatarcontaessao(Number1))
+    ####################
+def format_result(value, is_cientifica):
+        try:
+            mode, digits = get_round_settings()
+            if mode == "fix":
+                out = f"{value:.{digits}f}"
+            elif mode == "sci":
+                sig = max(1, int(digits))
+                out = f"{value:.{sig}e}"
+            else:
+                out = f"{value:.12g}"
+            
+            if not is_cientifica:
+                out = out.replace(".", ",")
+            return out
+        except Exception:
+            return "Erro"
+###########
+def swapSignals():
+    """Função para inverter sinal (-) - Adaptada do Grupo Leandro"""
+    global Number1, Display
+    try:
+        expr = Number1
+        
+        # Padrão 1: sinal no início do número
+        m1 = re.search(r"([+-]?)(\d*+(?:[.,]\d+)?)$", expr)
+        
+        if m1:
+            op = m1.group(1)
+            num = m1.group(2)
+            num_norm = num.replace(",", ".")
+
+            try:
+                if float(num_norm) == 0:
+                    return
+            except Exception:
+                return
+            
+            num_sem_sinal = num.lstrip("+-")
+            novo_op = "-" if op != "-" else "+"
+            nova_expr = expr[:m1.start(1)] + novo_op + num_sem_sinal
+            Number1 = nova_expr
+            Display.set(formatarcontaessao(Number1))
+            return
+
+        # Padrão 2: número com sinal
+        m2 = re.search(r"([+-]?\d*+([.,]\d+)?)$", expr)
+        
+        if m2:
+            num = m2.group(1)
+            num_norm = num.replace(",", ".")
+            
+            try:
+                f = float(num_norm)
+            except Exception:
+                return
+
+            if f == 0:
+                return
+
+            if num.startswith("-"):
+                novo_num = num[1:]
+            else:
+                novo_num = "-" + num
+
+            nova_expr = expr[:-len(num)] + novo_num
+            Number1 = nova_expr
+            Display.set(formatarcontaessao(Number1))
+            return
+
+    except Exception as e:
+        print(f"Erro ao trocar sinal: {e}")
+#############
+
+################# FIM CODIGO GRUPO RAMOS ####################
 
 
 
@@ -224,7 +584,15 @@ def ativar_menu_drg():
     global menu_drg_ativo
     menu_drg_ativo = True
     Display.set("D-1 R-2 G-3")
+def inserir_parentese_esquerdo():
+    global Number1
+    Number1 += "("
+    Display.set(Number1)
 
+def inserir_parentese_direito():
+    global Number1
+    Number1 += ")"
+    Display.set(Number1)
 def inserir_simbolo_angular(opcao):
     """Insere o símbolo angular baseado na opção escolhida"""
     global menu_drg_ativo, Number1
@@ -750,10 +1118,10 @@ def socorro_me_ajuda(oi):
         but22.place(x=(xaux) - xauxoffset, y=yaux * (2.175) - yauxoffset + 25)
         text8.place(x=(xaux) - xauxoffset + 10, y=yaux * (2.85) - yauxoffset + 11)
         butC15.place(x=(xaux) - xauxoffset, y=yaux * (2.85) - yauxoffset + 25)
-        butC15.config(height=1, width=3)
+        butC15.config(height=1, width=3, command=lambda: swapSignals())
         text9.place(x=(xaux) - xauxoffset + 5, y=yaux * (3.55) - yauxoffset + 10)
         butC16.place(x=(xaux) - xauxoffset, y=yaux * (3.55) - yauxoffset + 25)
-        butC16.config(height=1, width=3)
+        butC16.config(height=1, width=3,command=lambda: _sto() if shift else _rcl())
         
                         ### COLUNA CIENTIFICA 2
                       
@@ -776,16 +1144,20 @@ def socorro_me_ajuda(oi):
                         ### COLUNA CIENTIFICA 3
                         
         butCrep1.place(x=(xaux * 7.2) - xauxoffset, y=yaux * (0.85) - yauxoffset + 25)
+        butCrep1.config(command=lambda: replay_cima())
         butCrep4.place(x=(xaux * 5.9) - xauxoffset, y=yaux * (1.175) - yauxoffset + 25)
+        butCrep4.config(command=lambda: replay_esquerda())
         butCrep3.place(x=(xaux * 7.2) - xauxoffset, y=yaux * (1.5) - yauxoffset + 25)
-        butCrep2.place(x=(xaux * 8.5) - xauxoffset, y=yaux * (1.175) - yauxoffset + 25)
+        butCrep3.config(command=lambda: replay_baixo())
+        butCrep2.place(x=(xaux * 8.5) - xauxoffset, y=yaux * (1.175) - yauxoffset +25 )
+        butCrep2.config(command=lambda: replay_direita())
         butC33.place(x=(xaux * 5.9) - xauxoffset, y=yaux * (2.175) - yauxoffset + 25)
         butC33.config(height=1, width=3,command=calc_quadrado)
         text14.place(x=(xaux * 5.9) - xauxoffset + 20, y=yaux * (2.85) - yauxoffset + 12)
         butC34.place(x=(xaux * 5.9) - xauxoffset, y=yaux * (2.85) - yauxoffset + 25)
         butC34.config(height=1, width=3, command=lambda:inserir_H())
         butC35.place(x=(xaux * 5.9) - xauxoffset, y=yaux * (3.55) - yauxoffset + 25)
-        butC35.config(height=1, width=3)
+        butC35.config(height=1, width=3,command=lambda: inserir_parentese_esquerdo())
         
                         ### COLUNA CIENTIFICA 4
         
@@ -798,13 +1170,13 @@ def socorro_me_ajuda(oi):
         butC44.config(height=1, width=3, command=lambda:(inserir_sin()))
         text18.place(x=(xaux * 8.5) - xauxoffset + 10, y=yaux * (3.55) - yauxoffset + 12)
         butC45.place(x=(xaux * 8.5) - xauxoffset, y=yaux * (3.55) - yauxoffset + 25)
-        butC45.config(height=1, width=3)
+        butC45.config(height=1, width=3,command=lambda: inserir_parentese_direito())
         
                         ### COLUNA CIENTIFICA 5
 
         text3.place(x=(xaux * 11) - xauxoffset - 2, y=yaux * (0.85) - yauxoffset + 11)
         butC51.place(x=(xaux * 11) - xauxoffset, y=yaux * (0.85) - yauxoffset + 25)
-        butC51.config(height=1, width=3)
+        butC51.config(height=1, width=3,command=lambda: toggle_mode())
         text19.place(x=(xaux * 11) - xauxoffset, y=yaux * (1.5) - yauxoffset + 12)
         text20.place(x=(xaux * 11) - xauxoffset + 25, y=yaux * (1.5) - yauxoffset + 12)
         butC52.place(x=(xaux * 11) - xauxoffset, y=yaux * (1.5) - yauxoffset + 25)
@@ -819,7 +1191,7 @@ def socorro_me_ajuda(oi):
         text24.place(x=(xaux * 11) - xauxoffset, y=yaux * (3.55) - yauxoffset + 12)
         text25.place(x=(xaux * 11) - xauxoffset + 20, y=yaux * (3.55) - yauxoffset + 12)
         butC55.place(x=(xaux * 11) - xauxoffset, y=yaux * (3.55) - yauxoffset + 25)
-        butC55.config(height=1, width=3)
+        butC55.config(height=1, width=3, command=lambda: inserir_virgula())
         
                         ### COLUNA CIENTIFICA 6
         
@@ -842,7 +1214,7 @@ def socorro_me_ajuda(oi):
         text32.place(x=(xaux * 13.5) - xauxoffset + 20, y=yaux * (3.55) - yauxoffset + 12)
         text33.place(x=(xaux * 13.5) - xauxoffset, y=yaux * (4.175) - yauxoffset + 12)
         butC65.place(x=(xaux * 13.5) - xauxoffset, y=yaux * (3.55) - yauxoffset + 25)
-        butC65.config(height=1, width=3)
+        butC65.config(height=1, width=3, command=lambda: func_m_plus())
         
         output.place(x = 19 - xauxoffset, y = 35 - yauxoffset)
         output.config(width= 23)
@@ -1217,20 +1589,23 @@ def inserir_operador(value):
 
     Display.set(formatarcontaessao(Number1))
 def resultado():
-    global Number1, virgulas, ciencia
+    global Number1, virgulas, ciencia, historico
     
     if ciencia:
         resultado = calcular_cientifica(Number1)
     else:
         resultado = calcular(Number1)
     
-    if resultado == "Não é possível dividir por zero" or resultado == "Erro":
+    if resultado == "Não é possível dividir por zero" or resultado == "Erro" or "Erro:" in str(resultado):
         limpar()
         Display.set("Erro")
     else:
-        Number1 = str(resultado)
+        resultado_formatado = format_result(resultado, ciencia)
+        Number1 = resultado_formatado
         Display.set(formatarcontaessao(Number1))
         virgulas = True
+        
+        adicionar_ao_historico(resultado)
 def formatarcontaessao(conta):
     global ciencia
     if ciencia:
@@ -1306,27 +1681,33 @@ def processar_funcoes_inversas(conta):
     
     return conta
 def processar_completo(conta):
-        conta = conta.replace("Ans", str(ans))
+    conta = conta.replace("Ans", str(ans))
+    conta = conta.replace("^", "**")
+    conta = conta.replace("π", str(math.pi))
+    conta = conta.replace("X", "*").replace("÷", "/")
+    
+    # Processar graus, minutos, segundos
+    graus_pattern = r"(\d+)°(\d+)'([\d.]+)\""
+    matches = re.findall(graus_pattern, conta)
+    for graus, minutos, segundos in matches:
+        valor_decimal = float(graus) + float(minutos)/60 + float(segundos)/3600
+        conta = conta.replace(f"{graus}°{minutos}'{segundos}\"", str(valor_decimal))
+    
+    conta = converter_notacao_inversa(conta)
+    conta = converter_notacao_hiperbolica_inversa(conta)
+    conta = processar_funcoes_inversas(conta)
+    conta = processar_funcoes_hiperbolicas(conta)
+    conta = processar_expressao_com_unidades(conta)
+    conta = remover_zeros_esquerda(conta)
+    
+    for var, valor in memory_slots.items():
+        conta = conta.replace(var, str(valor))
 
-        conta = conta.replace("^", "**")
-        conta = conta.replace("π", str(math.pi))
-        conta = conta.replace("X", "*").replace("÷", "/").replace(",", ".")
-        conta = converter_notacao_inversa(conta)
-        conta = converter_notacao_hiperbolica_inversa(conta)
-        conta = processar_funcoes_inversas(conta)
-        conta = processar_funcoes_hiperbolicas(conta)
-        conta = processar_expressao_com_unidades(conta)
-        conta = remover_zeros_esquerda(conta)
-     
-        
-        for var, valor in memory_slots.items():
-            conta = conta.replace(var, str(valor))
+    abertos = conta.count('(')
+    fechados = conta.count(')')
+    conta += ')' * (abertos - fechados)
 
-        abertos = conta.count('(')
-        fechados = conta.count(')')
-        conta += ')' * (abertos - fechados)
-
-        return conta
+    return conta
 def calcular_cientifica(conta):
     global ans, memory_slots
     
