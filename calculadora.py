@@ -6,6 +6,9 @@ import math
 import ast
 import operator as op
 import re
+from fractions import Fraction
+import math
+from math import log, log10, factorial, radians, cos
 ans = 0
 yaux = 45
 xaux = 18
@@ -18,9 +21,9 @@ shift = False
 alpha = False
 menu_s_sum_ativo = False
 menu_s_var_ativo = False
-values = ["#"]          # Lista de dígitos digitados
-operation = [0, "#", 0] # [valor1, operador, valor2]
-aIndex = 0              # Índice para operação
+values = ["#"]         
+operation = [0, "#", 0]
+aIndex = 0             
 memory_slots = {
   "A": "4",
   "B": "5",
@@ -46,8 +49,282 @@ minuteSign = "'"
 secondSign = '"'
 # LEANDRO
 # LUCAS - Variáveis adicionais
-memoria = 0  # Valor global da memória
-current_mode = "COMP"  # padrão inicial = cálculo normal
+memoria = 0  
+current_mode = "COMP" 
+
+
+########################################### GRUPO Nathan ####################################
+
+def Abc(x: float) -> str:
+    """
+    Converte número em fração.
+      Ab/c normal -> fração imprópria
+      SHIFT + Ab/c -> número misto
+    """
+    frac = Fraction(x).limit_denominator()
+    return f"{frac.numerator}/{frac.denominator}"
+
+def Dc(x: float) -> str:
+    frac = Fraction(x).limit_denominator()
+    
+    inteiro, resto = divmod(frac.numerator, frac.denominator)
+    if inteiro == 0:
+        return f"{resto}/{frac.denominator}"
+    elif resto == 0:
+        return str(inteiro)
+    else:
+        return f"{inteiro} {resto}/{frac.denominator}"
+
+def ENG(x: float) -> str:
+    """
+    Converte número para notação de engenharia.
+    SHIFT + ENG -> volta para decimal.
+    """
+    if x == 0:
+        return "0"
+    exp = int((math.log10(abs(x)) / 3) * 3)
+    mantissa = x / (10 ** exp)
+    return f"{mantissa}X10^{exp}"
+
+def fnLn(s: str) -> float:
+    """ln(x). SHIFT -> e^x. ALPHA -> constante e."""
+    formula = s
+    if "ln" in formula:
+        formula = formula.strip()
+        value = float(formula.removeprefix("ln"))
+    else:
+        raise ValueError("log não está definido")
+    if value <= 0:
+        raise ValueError("ln indefinido para x <= 0")
+    return log(value)
+
+def fnLog10(s: str) -> float:
+    """log10(x). SHIFT -> 10^x."""
+    formula = s
+    if "log" in formula:
+        formula = formula.strip()
+        value = float(formula.removeprefix("log"))
+    if value <= 0:
+        raise ValueError("log indefinido para x <= 0")
+    return log10(value)
+
+def Pol(s) -> float:
+    s = s.replace("Pol(", "")
+    if ")" in s: 
+        s = s.replace(")", "")
+    print(s)
+    if "," not in s:
+        raise ValueError("Faltando argumento em Pol(x, y)")
+    n, k = s.split(",")
+    if not n or not k:
+        raise ValueError("Argumentos inválidos em Pol(x, y)")
+    print(n, k)
+    return ((float(n) ** 2 + float(k) ** 2) ** (1/2))
+
+def Rec(s):    
+    s = s.replace("Rec(", "");
+    s = s.replace(")", "");
+    n, k = s.split(",")
+    return (float(n) * cos(radians(float(k))))
+
+def nCr(s):
+    if "C" in s:
+        n,k= s.split("C")
+        return factorial(int(n)) // (factorial(int(k)) * factorial(int(n) - int(k)))
+
+def nPr(s):
+    if "P" in s:
+        n,k = s.split("P")
+        return factorial(int(n)) // factorial(int(n) - int(k))
+
+def twoPoints(s):
+    if("Ans" in s):
+        s = s.replace("Ans", "")
+        s = s.replace("x","*")
+        expressions = s.split(":");
+
+        for i in range(len(expressions)):
+            if i==0:
+                expressions[i] = eval(expressions[i])
+            else:
+                expression = str(expressions[i-1])+""+str(expressions[i])
+                expressions[i] = eval(expression)
+        return expressions
+    else:
+        return ValueError("Sintax Error: Ans não informado")
+########################################### FIM GRUPO NATHAN ####################################
+def executar_abc():
+    global Number1, shift
+    try:
+        if ciencia:
+            valor_calc = calcular_cientifica(Number1)
+        else:
+            valor_calc = calcular(Number1)
+        
+        if isinstance(valor_calc, str) and ("Erro" in valor_calc or "não é possível" in valor_calc.lower()):
+            valor_str = Number1.replace(",", ".")
+            valor = float(valor_str)
+        else:
+            valor = float(str(valor_calc).replace(",", "."))
+        
+        if shift:
+            resultado = Dc(valor) 
+        else:
+            resultado = Abc(valor) 
+        
+        Number1 = resultado
+        Display.set(resultado)
+    except Exception as e:
+        Display.set(f"Erro: {str(e)}")
+
+def executar_eng():
+    global Number1, shift
+    try:
+        if ciencia:
+            valor_calc = calcular_cientifica(Number1)
+        else:
+            valor_calc = calcular(Number1)
+        
+        if isinstance(valor_calc, str) and ("Erro" in valor_calc or "não é possível" in valor_calc.lower()):
+            valor_str = Number1.replace(",", ".")
+            valor = float(valor_str)
+        else:
+            valor = float(str(valor_calc).replace(",", "."))
+        
+        if shift:
+            resultado = str(valor)  
+        else:
+            resultado = ENG(valor)  
+        
+        Number1 = resultado
+        Display.set(resultado)
+    except Exception as e:
+        Display.set(f"Erro: {str(e)}")
+
+def executar_ln():
+    global Number1, shift, alpha
+    try:
+        if alpha:
+            resultado = str(math.e)
+            Number1 = resultado
+            Display.set(resultado)
+            return
+            
+        if shift:
+            if ciencia:
+                valor_calc = calcular_cientifica(Number1)
+            else:
+                valor_calc = calcular(Number1)
+            
+            if isinstance(valor_calc, str) and ("Erro" in valor_calc or "não é possível" in valor_calc.lower()):
+                valor_str = Number1.replace(",", ".")
+                valor = float(valor_str)
+            else:
+                valor = float(str(valor_calc).replace(",", "."))
+            
+            resultado = str(math.exp(valor))
+        else:
+            if ciencia:
+                valor_calc = calcular_cientifica(Number1)
+            else:
+                valor_calc = calcular(Number1)
+            
+            if isinstance(valor_calc, str) and ("Erro" in valor_calc or "não é possível" in valor_calc.lower()):
+                valor_str = Number1.replace(",", ".")
+                valor = float(valor_str)
+            else:
+                valor = float(str(valor_calc).replace(",", "."))
+            
+            resultado = str(fnLn(f"ln{valor}"))
+        
+        Number1 = resultado
+        Display.set(resultado)
+    except Exception as e:
+        Display.set(f"Erro: {str(e)}")
+
+def executar_log10():
+    global Number1, shift
+    try:
+        if shift:
+            if ciencia:
+                valor_calc = calcular_cientifica(Number1)
+            else:
+                valor_calc = calcular(Number1)
+            
+            if isinstance(valor_calc, str) and ("Erro" in valor_calc or "não é possível" in valor_calc.lower()):
+                valor_str = Number1.replace(",", ".")
+                valor = float(valor_str)
+            else:
+                valor = float(str(valor_calc).replace(",", "."))
+            
+            resultado = str(10 ** valor)
+        else:
+            if ciencia:
+                valor_calc = calcular_cientifica(Number1)
+            else:
+                valor_calc = calcular(Number1)
+            
+            if isinstance(valor_calc, str) and ("Erro" in valor_calc or "não é possível" in valor_calc.lower()):
+                valor_str = Number1.replace(",", ".")
+                valor = float(valor_str)
+            else:
+                valor = float(str(valor_calc).replace(",", "."))
+            
+            resultado = str(fnLog10(f"log{valor}"))
+        
+        Number1 = resultado
+        Display.set(resultado)
+    except Exception as e:
+        Display.set(f"Erro: {str(e)}")
+
+def executar_pol():
+    global Number1
+    try:
+        Number1 += "Pol(,)"
+        Display.set(Number1)
+    except Exception as e:
+        Display.set(f"Erro: {str(e)}")
+
+def executar_rec():
+    global Number1
+    try:
+        Number1 += "Rec(,)"
+        Display.set(Number1)
+    except Exception as e:
+        Display.set(f"Erro: {str(e)}")
+
+def executar_ncr():
+    global Number1
+    try:
+        Number1 += "C"
+        Display.set(Number1)
+    except Exception as e:
+        Display.set(f"Erro: {str(e)}")
+
+def executar_npr():
+    global Number1
+    try:
+        Number1 += "P"
+        Display.set(Number1)
+    except Exception as e:
+        Display.set(f"Erro: {str(e)}")
+
+def executar_twopoints():
+    global Number1
+    try:
+        Number1 += ":"
+        Display.set(Number1)
+    except Exception as e:
+        Display.set(f"Erro: {str(e)}")
+
+def executar_calculo_twopoints():
+    global Number1
+    try:
+        resultado = twoPoints(f"Ans:{Number1}")
+        Number1 = str(resultado)
+        Display.set(Number1)
+    except Exception as e:
+        Display.set(f"Erro: {str(e)}")
 
 ########################################### GRUPO LUCAS ####################################
 
@@ -193,18 +470,16 @@ def toggle_mode():
               command=mode_window.destroy).pack(pady=5)
 
 def adicionar_ao_historico(resultado):
-    """Adicionar resultado ao histórico para replay"""
     global historico, indice_historico
     historico.append(resultado)
     indice_historico = len(historico) - 1
 
-# Modificar a função resultado() para usar o histórico
 
 
 ########################################### FIM GRUPO LUCAS ####################################
+
 ################# CODIGO ADICIONADO GRUPO RAMOS ####################
 def vld_slots():
-    """Return list of valid slot keys."""
     return list(memory_slots.keys())
 
 def is_valid_slot(slot: str) -> bool:
@@ -294,7 +569,7 @@ def _sto():
     if not slot:
         return
     val = Number1
-    if not ciencia:  # Modo normal usa vírgula
+    if not ciencia:  
         val = val.replace(",", ".")
     if set_memory(slot, val):
         messagebox.showinfo("STO", f"Valor armazenado em {slot}", parent=root)
@@ -309,7 +584,7 @@ def _rcl():
     if val is None:
         messagebox.showerror("Erro", f"Nenhum valor em {slot}", parent=root)
         return
-    if not ciencia:  # Modo normal usa vírgula
+    if not ciencia:  
         val = val.replace(".", ",")
     
     global Number1
@@ -580,7 +855,6 @@ def ativar_menu_s_sum():
     Display.set("1-Σx    2-Σx²   3-n")
 
 def ativar_menu_drg():
-    """Ativa o menu DRG quando Shift + Ans é pressionado"""
     global menu_drg_ativo
     menu_drg_ativo = True
     Display.set("D-1 R-2 G-3")
@@ -594,7 +868,6 @@ def inserir_parentese_direito():
     Number1 += ")"
     Display.set(Number1)
 def inserir_simbolo_angular(opcao):
-    """Insere o símbolo angular baseado na opção escolhida"""
     global menu_drg_ativo, Number1
     
     simbolos = {
@@ -650,37 +923,31 @@ def fnQuantidade_n():
     return sum(1 for v in valores if v != 0)
 
 def fnHSIN(valor):
-    """Seno hiperbólico"""
     try:
         return math.sinh(float(valor))
     except:
         return "Erro"
 
 def fnHCOS(valor):
-    """Cosseno hiperbólico"""
     try:
         return math.cosh(float(valor))
     except:
         return "Erro"
 
 def fnHTAN(valor):
-    """Tangente hiperbólica"""
     try:
         return math.tanh(float(valor))
     except:
         return "Erro"
 
 def fnHSIN_INV(valor):
-    """Arco seno hiperbólico (hsin⁻¹)"""
     try:
         valor_num = float(valor)
-        # Aceita qualquer número real
         return math.asinh(valor_num)
     except:
         return "Erro"
 
 def fnHCOS_INV(valor):
-    """Arco cosseno hiperbólico (hcos⁻¹)"""
     try:
         valor_num = float(valor)
         if valor_num >= 1:
@@ -691,7 +958,6 @@ def fnHCOS_INV(valor):
         return "Erro"
 
 def fnHTAN_INV(valor):
-    """Arco tangente hiperbólica (htan⁻¹)"""
     try:
         valor_num = float(valor)
         if -1 < valor_num < 1:
@@ -804,18 +1070,13 @@ OPERADORES = {
     ast.USub: op.neg,
 }
 def converter_notacao_inversa(conta):
-    """
-    Converte notação matemática sin⁻¹, cos⁻¹, tan⁻¹ para asin, acos, atan
-    """
+
     conta = conta.replace('sin⁻¹', 'asin')
     conta = conta.replace('cos⁻¹', 'acos') 
     conta = conta.replace('tan⁻¹', 'atan')
     return conta
 
 def converter_notacao_hiperbolica_inversa(conta):
-    """
-    Converte notação matemática hsin⁻¹, hcos⁻¹, htan⁻¹ para hasin, hacos, hatan
-    """
     conta = conta.replace('hsin⁻¹', 'hasin')
     conta = conta.replace('hcos⁻¹', 'hacos')
     conta = conta.replace('htan⁻¹', 'hatan')
@@ -832,7 +1093,10 @@ FUNCOES = {
     'log': math.log10, 
     'exp': fnExp,
     'pi': fnPi,
-
+    'pol': lambda x: str(Pol(x)),
+    'rec': lambda x: str(Rec(x)),
+    'ncr': lambda x: str(nCr(x)),
+    'npr': lambda x: str(nPr(x)),
     'hsin': fnHSIN,
     'hcos': fnHCOS,
     'htan': fnHTAN,
@@ -920,7 +1184,7 @@ def socorro_me_ajuda(oi):
         but35.config(command= lambda: inserir_numero(3), background="#f0f0f0")
         but36.config(command= resultado, width=12, background="#f0f0f0")
 
-        but41.config(command= backspace, text="⌫", background="#f0f0f0")
+        but41.config(command=lambda: backspace, text="⌫", background="#f0f0f0")
         but42.config(command= lambda: inserir_operador(" ÷ "), background="#f0f0f0")
         but43.config(command= lambda: inserir_operador(" X "), background="#f0f0f0")
         but44.config(command= lambda: inserir_operador(" - "), background="#f0f0f0")
@@ -1114,7 +1378,7 @@ def socorro_me_ajuda(oi):
         but11.config(height=1, width=3, text="X⁻¹", command=calc_inverso)
         but11.place(x=(xaux) - xauxoffset, y=yaux * (1.5) - yauxoffset + 25)
         text7.place(x=(xaux) - xauxoffset + 10, y=yaux * (2.175) - yauxoffset + 11)
-        but22.config(height=1, width=3, text="ab/c", command= "")
+        but22.config(height=1, width=3, text="ab/c", command=lambda: executar_abc())
         but22.place(x=(xaux) - xauxoffset, y=yaux * (2.175) - yauxoffset + 25)
         text8.place(x=(xaux) - xauxoffset + 10, y=yaux * (2.85) - yauxoffset + 11)
         butC15.place(x=(xaux) - xauxoffset, y=yaux * (2.85) - yauxoffset + 25)
@@ -1127,19 +1391,19 @@ def socorro_me_ajuda(oi):
                       
         text2.place(x=(xaux * 3.5) - xauxoffset + 1, y=yaux * (0.85) - yauxoffset + 11)
         butC21.place(x=(xaux * 3.5) - xauxoffset, y=yaux * (0.85) - yauxoffset + 25)
-        butC21.config(height=1, width=3)
+        butC21.config(height=1, width=3,command=lambda:executar_ncr())
         text10.place(x=(xaux * 3.5) - xauxoffset + 3, y=yaux * (1.5) - yauxoffset + 12)
         butC22.place(x=(xaux * 3.5) - xauxoffset, y=yaux * (1.5) - yauxoffset + 25)
-        butC22.config(height=1, width=3)
+        butC22.config(height=1, width=3,command=lambda:executar_npr())
         butC23.place(x=(xaux * 3.5) - xauxoffset, y=yaux * (2.175) - yauxoffset + 25)
-        butC23.config(height=1, width=3,command=calc_raiz)
+        butC23.config(height=1, width=3,command=lambda:calc_raiz())
         text11.place(x=(xaux * 3.5) - xauxoffset, y=yaux * (2.85) - yauxoffset + 12)
         text12.place(x=(xaux * 3.5) - xauxoffset + 20, y=yaux * (2.85) - yauxoffset + 12)
         butC24.place(x=(xaux * 3.5) - xauxoffset, y=yaux * (2.85) - yauxoffset + 25)
         butC24.config(height=1, width=3)
         text13.place(x=(xaux * 3.5) - xauxoffset + 10, y=yaux * (3.55) - yauxoffset + 12)
         butC25.place(x=(xaux * 3.5) - xauxoffset, y=yaux * (3.55) - yauxoffset + 25)
-        butC25.config(height=1, width=3)
+        butC25.config(height=1, width=3,command=lambda: executar_eng())
         
                         ### COLUNA CIENTIFICA 3
                         
@@ -1152,7 +1416,7 @@ def socorro_me_ajuda(oi):
         butCrep2.place(x=(xaux * 8.5) - xauxoffset, y=yaux * (1.175) - yauxoffset +25 )
         butCrep2.config(command=lambda: replay_direita())
         butC33.place(x=(xaux * 5.9) - xauxoffset, y=yaux * (2.175) - yauxoffset + 25)
-        butC33.config(height=1, width=3,command=calc_quadrado)
+        butC33.config(height=1, width=3,command=lambda:calc_quadrado())
         text14.place(x=(xaux * 5.9) - xauxoffset + 20, y=yaux * (2.85) - yauxoffset + 12)
         butC34.place(x=(xaux * 5.9) - xauxoffset, y=yaux * (2.85) - yauxoffset + 25)
         butC34.config(height=1, width=3, command=lambda:inserir_H())
@@ -1180,10 +1444,10 @@ def socorro_me_ajuda(oi):
         text19.place(x=(xaux * 11) - xauxoffset, y=yaux * (1.5) - yauxoffset + 12)
         text20.place(x=(xaux * 11) - xauxoffset + 25, y=yaux * (1.5) - yauxoffset + 12)
         butC52.place(x=(xaux * 11) - xauxoffset, y=yaux * (1.5) - yauxoffset + 25)
-        butC52.config(height=1, width=3)
+        butC52.config(height=1, width=3,command=lambda:executar_pol())
         text21.place(x=(xaux * 11) - xauxoffset + 10, y=yaux * (2.175) - yauxoffset + 12)
         butC53.place(x=(xaux * 11) - xauxoffset, y=yaux * (2.175) - yauxoffset + 25)
-        butC53.config(height=1, width=3)
+        butC53.config(height=1, width=3,command=lambda:executar_log10())
         text22.place(x=(xaux * 11) - xauxoffset, y=yaux * (2.85) - yauxoffset + 12)
         text23.place(x=(xaux * 11) - xauxoffset + 20, y=yaux * (2.85) - yauxoffset + 12)
         butC54.place(x=(xaux * 11) - xauxoffset, y=yaux * (2.85) - yauxoffset + 25)
@@ -1205,7 +1469,7 @@ def socorro_me_ajuda(oi):
         text27.place(x=(xaux * 13.5) - xauxoffset, y=yaux * (2.175) - yauxoffset + 12)
         text28.place(x=(xaux * 13.5) - xauxoffset + 20, y=yaux * (2.175) - yauxoffset + 12)
         butC63.place(x=(xaux * 13.5) - xauxoffset, y=yaux * (2.175) - yauxoffset + 25)
-        butC63.config(height=1, width=3)
+        butC63.config(height=1, width=3,command=lambda:executar_ln())
         text29.place(x=(xaux * 13.5) - xauxoffset, y=yaux * (2.85) - yauxoffset + 12)
         text30.place(x=(xaux * 13.5) - xauxoffset + 20, y=yaux * (2.85) - yauxoffset + 12)
         butC64.place(x=(xaux * 13.5) - xauxoffset, y=yaux * (2.85) - yauxoffset + 25)
@@ -1623,9 +1887,7 @@ def formatarcontaessao(conta):
 
 
 def processar_expressao_com_unidades(expressao):
-    """
-    Processa expressões com unidades angulares como: 3r + 45° * 2g
-    """
+
    
     padrao = r'(\d*\.?\d+)(°|r|g)'
     
@@ -1650,9 +1912,7 @@ def processar_expressao_com_unidades(expressao):
     
     return expressao
 def processar_funcoes_hiperbolicas(conta):
-    """
-    Processa TODAS as funções hiperbólicas: normais e inversas
-    """
+
 
     funcoes_hiperbolicas = [
      
@@ -1669,9 +1929,7 @@ def processar_funcoes_hiperbolicas(conta):
     
     return conta
 def processar_funcoes_inversas(conta):
-    """
-    Processa funções trigonométricas inversas: sin⁻¹, cos⁻¹, tan⁻¹
-    """
+
     funcoes_inversas = ['sin⁻¹(', 'cos⁻¹(', 'tan⁻¹(']
     
     for func_inversa in funcoes_inversas:
@@ -1812,12 +2070,8 @@ def inserir_raiz():
 
 
 def processar_simbolos_angulares(conta):
-    """
-    Processa símbolos angulares em funções trigonométricas
-    Ex: sin(45°) -> sin(45), cos(πr) -> cos(180), tan(100g) -> tan(90)
-    """
+
     try:
-        # Padrões para encontrar funções trigonométricas com símbolos angulares
         padroes = [
             r'(sin|cos|tan)\(([^)]+)(°|r|g)\)',
             r'(sin|cos|tan)\(([^)]+)(°|r|g)',
